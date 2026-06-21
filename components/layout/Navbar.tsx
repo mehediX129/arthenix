@@ -2,20 +2,49 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Bell, Menu, X, ChevronDown } from "lucide-react";
+import {
+  Search,
+  Bell,
+  Menu,
+  X,
+  ChevronDown,
+  LogOut,
+  User as UserIcon,
+  ShoppingBag,
+} from "lucide-react";
 import { worlds } from "@/lib/worlds-data";
+import { useUser } from "@/hooks/useUser";
+import { useUserStore } from "@/lib/store/user-store";
+import { createClient } from "@/lib/supabase/client";
+import Avatar from "@/components/ui/Avatar";
 
 export default function Navbar() {
+  const router = useRouter();
+  const { user, loading } = useUser();
+  const clearUser = useUserStore((state) => state.clearUser);
+
   const [scrolled, setScrolled] = useState(false);
   const [worldsOpen, setWorldsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    clearUser();
+    setAccountMenuOpen(false);
+    setMobileOpen(false);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <>
@@ -31,7 +60,6 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-
             {/* Logo */}
             <Link href="/" className="flex items-center">
               <span
@@ -64,7 +92,6 @@ export default function Navbar() {
                   </motion.div>
                 </button>
 
-                {/* Mega Dropdown */}
                 <AnimatePresence>
                   {worldsOpen && (
                     <motion.div
@@ -91,9 +118,7 @@ export default function Navbar() {
                             key={world.id}
                             href={`/worlds/${world.id}`}
                             className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:scale-[1.02]"
-                            style={{
-                              background: `${world.color}10`,
-                            }}
+                            style={{ background: `${world.color}10` }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = `${world.color}25`;
                             }}
@@ -103,9 +128,7 @@ export default function Navbar() {
                           >
                             <span className="text-xl">{world.emoji}</span>
                             <div>
-                              <p
-                                className="font-display font-bold text-sm text-text-primary"
-                              >
+                              <p className="font-display font-bold text-sm text-text-primary">
                                 {world.name}
                               </p>
                               <p className="font-mono text-xs text-text-muted">
@@ -136,30 +159,107 @@ export default function Navbar() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              {/* Search */}
               <button className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all duration-200">
                 <Search size={18} />
               </button>
 
-              {/* Bell */}
-              <button className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all duration-200 relative">
-                <Bell size={18} />
-                <span
-                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-                  style={{ background: "#EC4899" }}
-                />
-              </button>
+              {user && (
+                <button className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all duration-200 relative">
+                  <Bell size={18} />
+                  <span
+                    className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                    style={{ background: "#EC4899" }}
+                  />
+                </button>
+              )}
 
-              {/* Login Button */}
-              <Link
-                href="/login"
-                className="hidden md:flex items-center px-4 py-2 rounded-lg font-display font-bold text-sm text-white transition-all duration-200 hover:scale-105 hover:shadow-glow-violet"
-                style={{
-                  background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
-                }}
-              >
-                Sign In
-              </Link>
+              {/* Auth state — desktop */}
+              <div className="hidden md:block">
+                {loading ? (
+                  <div className="w-9 h-9 rounded-full bg-white/5 animate-pulse" />
+                ) : user ? (
+                  <div className="relative">
+                    <button
+                      onMouseEnter={() => setAccountMenuOpen(true)}
+                      onMouseLeave={() => setAccountMenuOpen(false)}
+                      className="flex items-center"
+                    >
+                      <Avatar
+                        src={user.avatar_url}
+                        name={user.username}
+                        level={user.level}
+                        size="sm"
+                        showLevelBadge
+                      />
+                    </button>
+
+                    <AnimatePresence>
+                      {accountMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 8 }}
+                          transition={{ duration: 0.15 }}
+                          onMouseEnter={() => setAccountMenuOpen(true)}
+                          onMouseLeave={() => setAccountMenuOpen(false)}
+                          className="absolute top-full right-0 mt-2 w-56 rounded-xl p-2 z-50"
+                          style={{
+                            background: "rgba(18, 18, 31, 0.98)",
+                            backdropFilter: "blur(20px)",
+                            border: "1px solid rgba(124, 58, 237, 0.2)",
+                            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                          }}
+                        >
+                          <div className="px-3 py-2.5 border-b border-white/5 mb-1">
+                            <p className="text-sm font-semibold text-text-primary truncate">
+                              {user.username}
+                            </p>
+                            <p className="text-xs text-text-muted">
+                              {user.xp} XP &middot; {user.level}
+                            </p>
+                          </div>
+
+                          <Link
+                            href={`/profile/${user.username}`}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                          >
+                            <UserIcon size={15} />
+                            My Profile
+                          </Link>
+                          <Link
+                            href="/profile/purchases"
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                          >
+                            <ShoppingBag size={15} />
+                            My Purchases
+                          </Link>
+
+                          <div className="border-t border-white/5 mt-1 pt-1">
+                            <button
+                              type="button"
+                              onClick={handleSignOut}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                            >
+                              <LogOut size={15} />
+                              Sign Out
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="flex items-center px-4 py-2 rounded-lg font-display font-bold text-sm text-white transition-all duration-200 hover:scale-105 hover:shadow-glow-violet"
+                    style={{
+                      background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
+                    }}
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </div>
 
               {/* Mobile hamburger */}
               <button
@@ -177,7 +277,6 @@ export default function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -187,7 +286,6 @@ export default function Navbar() {
               style={{ background: "rgba(0,0,0,0.7)" }}
             />
 
-            {/* Drawer */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -199,7 +297,6 @@ export default function Navbar() {
                 borderRight: "1px solid rgba(124, 58, 237, 0.2)",
               }}
             >
-              {/* Drawer Header */}
               <div className="flex items-center justify-between p-4 border-b border-white border-opacity-5">
                 <span
                   className="font-display font-black text-xl"
@@ -220,7 +317,27 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Drawer Worlds */}
+              {/* Mobile — logged in user card */}
+              {user && (
+                <div className="flex items-center gap-3 p-4 border-b border-white/5">
+                  <Avatar
+                    src={user.avatar_url}
+                    name={user.username}
+                    level={user.level}
+                    size="md"
+                    showLevelBadge
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-primary truncate">
+                      {user.username}
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      {user.xp} XP &middot; {user.level}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="p-4">
                 <p className="font-mono text-xs text-text-muted mb-3 px-2">
                   WORLDS
@@ -247,7 +364,6 @@ export default function Navbar() {
                   ))}
                 </div>
 
-                {/* Mobile Links */}
                 <div className="mt-6 flex flex-col gap-2">
                   <Link
                     href="/marketplace"
@@ -263,20 +379,49 @@ export default function Navbar() {
                   >
                     💬 Community
                   </Link>
+
+                  {user && (
+                    <>
+                      <Link
+                        href={`/profile/${user.username}`}
+                        onClick={() => setMobileOpen(false)}
+                        className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
+                      >
+                        👤 My Profile
+                      </Link>
+                      <Link
+                        href="/profile/purchases"
+                        onClick={() => setMobileOpen(false)}
+                        className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
+                      >
+                        🛍️ My Purchases
+                      </Link>
+                    </>
+                  )}
                 </div>
 
-                {/* Mobile Sign In */}
                 <div className="mt-6">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-center w-full py-3 rounded-xl font-display font-bold text-white"
-                    style={{
-                      background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
-                    }}
-                  >
-                    Sign In
-                  </Link>
+                  {user ? (
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-display font-bold text-red-400 border border-red-500/30 hover:bg-red-500/10 transition-colors"
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  ) : (
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center justify-center w-full py-3 rounded-xl font-display font-bold text-white"
+                      style={{
+                        background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
+                      }}
+                    >
+                      Sign In
+                    </Link>
+                  )}
                 </div>
               </div>
             </motion.div>
