@@ -23,12 +23,15 @@ export type UserLevel =
 // ------------------------------------------------------------
 // 1. PROFILES
 // ------------------------------------------------------------
+export type ProfileVisibility = "public" | "private";
+
 export interface Profile {
   id: string;
   username: string;
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  location: string | null;
   xp: number;
   level: UserLevel;
   streak_days: number;
@@ -36,6 +39,9 @@ export interface Profile {
   selected_worlds: string[];
   is_seller: boolean;
   onboarding_complete: boolean;
+  profile_visibility: ProfileVisibility;
+  show_activity_feed: boolean;
+  show_purchases: boolean;
   created_at: string;
 }
 
