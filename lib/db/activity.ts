@@ -1,99 +1,41 @@
 import { createClient } from "@/lib/supabase/client";
-import type { DbResult } from "@/types/database";
+import type { UserActivity } from "@/types/database";
 
-export type ActivityType = "comment" | "purchase" | "review";
+// Get last 365 days of activity
+export async function getUserActivity(userId: string): Promise<{
+  data: UserActivity[] | null;
+  error: string | null;
+}> {
+  const supabase = createClient();
+  const from = new Date();
+  from.setFullYear(from.getFullYear() - 1);
 
-export interface ActivityItem {
-  id: string;
-  type: ActivityType;
-  title: string;
-  createdAt: string;
+  const { data, error } = await supabase
+    .from("user_activity")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("activity_date", from.toISOString().split("T")[0])
+    .order("activity_date", { ascending: true });
+
+  return { data, error: error?.message ?? null };
 }
 
-/**
- * Fetches a user's recent activity across comments, orders, and reviews.
- * Merges three separate queries client-side since there is no
- * unified activity log table in the schema.
- */
-export async function getUserActivity(
-  userId: string,
-  limit: number = 20
-): Promise<DbResult<ActivityItem[]>> {
+// Log activity for today
+export async function logActivity(userId: string): Promise<{ error: string | null }> {
   const supabase = createClient();
+  const today = new Date().toISOString().split("T")[0];
 
-  const [commentsResult, ordersResult, reviewsResult] = await Promise.all([
-    supabase
-      .from("comments")
-      .select("id, content, created_at, article:articles(title)")
-      .eq("author_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit),
-    supabase
-      .from("orders")
-      .select("id, created_at, status, product:products(title)")
-      .eq("buyer_id", userId)
-      .eq("status", "completed")
-      .order("created_at", { ascending: false })
-      .limit(limit),
-    supabase
-      .from("reviews")
-      .select("id, created_at, product:products(title)")
-      .eq("reviewer_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit),
-  ]);
+  const { error } = await supabase
+    .from("user_activity")
+    .upsert(
+      { user_id: userId, activity_date: today, activity_count: 1 },
+      { onConflict: "user_id,activity_date" }
+    );
 
-  const items: ActivityItem[] = [];
-
-  if (commentsResult.data) {
-    for (const c of commentsResult.data as unknown as {
-      id: string;
-      content: string;
-      created_at: string;
-      article: { title: string } | null;
-    }[]) {
-      items.push({
-        id: `comment-${c.id}`,
-        type: "comment",
-        title: c.article?.title ?? "an article",
-        createdAt: c.created_at,
-      });
-    }
+  // If already exists, increment count
+  if (!error) {
+    await supabase.rpc("increment_activity", { p_user_id: userId, p_date: today });
   }
 
-  if (ordersResult.data) {
-    for (const o of ordersResult.data as unknown as {
-      id: string;
-      created_at: string;
-      product: { title: string } | null;
-    }[]) {
-      items.push({
-        id: `order-${o.id}`,
-        type: "purchase",
-        title: o.product?.title ?? "a product",
-        createdAt: o.created_at,
-      });
-    }
-  }
-
-  if (reviewsResult.data) {
-    for (const r of reviewsResult.data as unknown as {
-      id: string;
-      created_at: string;
-      product: { title: string } | null;
-    }[]) {
-      items.push({
-        id: `review-${r.id}`,
-        type: "review",
-        title: r.product?.title ?? "a product",
-        createdAt: r.created_at,
-      });
-    }
-  }
-
-  items.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  return { data: items.slice(0, limit), error: null };
+  return { error: error?.message ?? null };
 }

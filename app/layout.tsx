@@ -1,8 +1,11 @@
-import "./globals.css";
 import React from "react";
 import type { Metadata } from "next";
+import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import LiveTicker from "@/components/layout/LiveTicker";
+import { XPToastContainer } from "@/components/gamification/XPToastContainer";
+import { LevelUpModal } from "@/components/gamification/LevelUpModal";
+
 
 export const metadata: Metadata = {
   title: "Arthenix — The Universe of Human Knowledge",
@@ -21,6 +24,8 @@ export default function RootLayout({
         <Navbar />
         <LiveTicker />
         <main>{children}</main>
+        <XPToastContainer />
+        <LevelUpModal />
       </body>
     </html>
   );

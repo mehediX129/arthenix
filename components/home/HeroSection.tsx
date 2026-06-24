@@ -3,18 +3,17 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
+const colors = ["#7C3AED", "#06B6D4", "#EC4899", "#F59E0B", "#10B981"];
 const particles = Array.from({ length: 35 }, (_, i) => ({
   id: i,
-  size: Math.random() * 5 + 2,
-  left: Math.random() * 100,
-  top: Math.random() * 100,
-  color: ["#7C3AED", "#06B6D4", "#EC4899", "#F59E0B", "#10B981"][
-    Math.floor(Math.random() * 5)
-  ],
-  duration: Math.random() * 8 + 6,
-  delay: Math.random() * 4,
-  moveX: (Math.random() - 0.5) * 80,
-  moveY: (Math.random() - 0.5) * 80,
+  size: 2 + (i * 3) % 5,
+  left: (i * 17 + 5) % 100,
+  top: (i * 31 + 7) % 100,
+  color: colors[i % colors.length],
+  duration: 6 + (i * 0.4) % 8,
+  delay: (i * 0.3) % 4,
+  moveX: (((i * 23) % 80) - 40),
+  moveY: (((i * 19) % 80) - 40),
 }));
 
 function CountUp({ end, duration = 2 }: { end: string; duration?: number }) {

@@ -43,6 +43,8 @@ export interface Profile {
   show_activity_feed: boolean;
   show_purchases: boolean;
   created_at: string;
+  freeze_count: number;
+  last_active_date: string | null;
 }
 
 // insert এর সময় যেসব field optional (DB default আছে)
@@ -322,4 +324,58 @@ export interface PriceHistory {
 export interface PriceHistoryPoint {
   date: string;
   price: number;
+}
+
+// ------------------------------------------------------------
+// QUESTS (Phase 5 — Gamification)
+// ------------------------------------------------------------ 
+export interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  xp_reward: number;
+  icon: string;
+  quest_type: "daily" | "weekly";
+  action_type: string;
+  target_count: number;
+  world_id: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UserQuest {
+  id: string;
+  user_id: string;
+  quest_id: string;
+  progress: number;
+  completed: boolean;
+  completed_at: string | null;
+  assigned_date: string;
+  created_at: string;
+}
+
+// UserQuest এর সাথে Quest এর joined তথ্য — list view তে দরকার হয়
+export interface UserQuestWithQuest extends UserQuest {
+  quest: Quest;
+}
+
+// ------------------------------------------------------------
+// STREAK FREEZE (Phase 5 — Gamification)
+// ------------------------------------------------------------ 
+export interface StreakFreeze {
+  id: string;
+  user_id: string;
+  used_on: string;
+  created_at: string;
+}
+
+// ------------------------------------------------------------
+// USER ACTIVITY (Phase 5 — Gamification)
+// ------------------------------------------------------------
+export interface UserActivity {
+  id: string;
+  user_id: string;
+  activity_date: string;
+  activity_count: number;
+  created_at: string;
 }
