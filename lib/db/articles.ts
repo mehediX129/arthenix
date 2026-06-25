@@ -1,149 +1,177 @@
 import { createClient } from "@/lib/supabase/client";
-import type {
-  Article,
-  ArticleInsert,
-  ArticleWithRelations,
-  PaginatedResult,
-  DbResult,
-} from "@/types/database";
+import type { Article, ArticleWithAuthor, ArticleInsert, ArticleUpdate } from "@/types/database";
 
-const ARTICLE_RELATIONS_SELECT =
-  "*, author:profiles(id, username, display_name, avatar_url), world:worlds(id, name, color)";
-
-/**
- * Slug দিয়ে একটা সম্পূর্ণ article fetch করে, author + world এর তথ্য সহ।
- * Article detail page এর জন্য মূল ফাংশন।
- */
-export async function getArticleBySlug(
-  slug: string
-): Promise<DbResult<ArticleWithRelations>> {
+// Get published articles by world
+export async function getArticlesByWorld(worldId: string, limit = 20): Promise<{
+  data: ArticleWithAuthor[] | null;
+  error: string | null;
+}> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("articles")
-    .select(ARTICLE_RELATIONS_SELECT)
+    .select("*, author:profiles(id, username, display_name, avatar_url, level)")
+    .eq("world_id", worldId)
+    .eq("is_published", true)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  return { data: data as ArticleWithAuthor[], error: error?.message ?? null };
+}
+
+// Get single article by slug
+export async function getArticleBySlug(slug: string): Promise<{
+  data: ArticleWithAuthor | null;
+  error: string | null;
+}> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("articles")
+    .select("*, author:profiles(id, username, display_name, avatar_url, level)")
     .eq("slug", slug)
     .eq("is_published", true)
     .single();
 
-  if (error) {
-    return { data: null, error: error.message };
-  }
-
-  return { data: data as unknown as ArticleWithRelations, error: null };
+  return { data: data as ArticleWithAuthor, error: error?.message ?? null };
 }
 
-/**
- * একটা নির্দিষ্ট world এর published article গুলো pagination সহ fetch করে।
- * Worlds page (Phase 6) এ ব্যবহার হবে।
- */
-export async function getArticlesByWorld(
-  worldId: string,
-  page: number = 1,
-  limit: number = 12
-): Promise<DbResult<PaginatedResult<ArticleWithRelations>>> {
+// Get user's own articles (drafts + published)
+export async function getMyArticles(userId: string): Promise<{
+  data: Article[] | null;
+  error: string | null;
+}> {
   const supabase = createClient();
 
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-
-  const { data, error, count } = await supabase
+  const { data, error } = await supabase
     .from("articles")
-    .select(ARTICLE_RELATIONS_SELECT, { count: "exact" })
-    .eq("world_id", worldId)
-    .eq("is_published", true)
-    .order("created_at", { ascending: false })
-    .range(from, to);
+    .select("*")
+    .eq("author_id", userId)
+    .order("created_at", { ascending: false });
 
-  if (error) {
-    return { data: null, error: error.message };
-  }
-
-  const totalCount = count ?? 0;
-
-  return {
-    data: {
-      data: data as unknown as ArticleWithRelations[],
-      count: totalCount,
-      page,
-      pageSize: limit,
-      hasMore: from + limit < totalCount,
-    },
-    error: null,
-  };
+  return { data, error: error?.message ?? null };
 }
 
-/**
- * Trending articles fetch করে (Phase 3B এর get_trending_articles SQL function কল করে)।
- * worldId না দিলে সব world মিলিয়ে trending দেখাবে।
- */
-export async function getTrendingArticles(
-  worldId?: string,
-  limit: number = 10
-): Promise<DbResult<Article[]>> {
+// Create new article (draft)
+export async function createArticle(payload: ArticleInsert): Promise<{
+  data: Article | null;
+  error: string | null;
+}> {
   const supabase = createClient();
 
-  const { data, error } = await supabase.rpc("get_trending_articles", {
-    p_world_id: worldId ?? null,
-    p_limit: limit,
-  });
-
-  if (error) {
-    return { data: null, error: error.message };
-  }
-
-  return { data: data as Article[], error: null };
-}
-
-/**
- * নতুন article তৈরি করে। author_id RLS policy অনুযায়ী
- * logged-in user এর নিজের id হতে হবে।
- */
-export async function createArticle(
-  data: ArticleInsert
-): Promise<DbResult<Article>> {
-  const supabase = createClient();
-
-  const { data: created, error } = await supabase
+  const { data, error } = await supabase
     .from("articles")
-    .insert(data)
+    .insert(payload)
     .select()
     .single();
 
-  if (error) {
-    return { data: null, error: error.message };
-  }
-
-  return { data: created as Article, error: null };
+  return { data, error: error?.message ?? null };
 }
 
-/**
- * Article view count বাড়ায়। Article page mount হওয়ার সময় কল হবে।
- *
- * এখানেই +10 XP logic (Phase 3 ডকুমেন্টে চাওয়া হয়েছিল) app-level এ handle করা হচ্ছে,
- * কারণ database trigger লেভেলে "কে দেখলো" সেই তথ্য available না।
- * শুধুমাত্র logged-in viewer XP পাবে, এবং একই ইউজার বারবার XP পাবে না
- * তা নিশ্চিত করার দায়িত্ব caller (component) এর — যেমন session/local state দিয়ে
- * একবারই কল করা নিশ্চিত করতে হবে।
- */
-export async function incrementViews(
-  articleId: string,
-  viewerId?: string
-): Promise<DbResult<null>> {
+// Update article
+export async function updateArticle(id: string, payload: ArticleUpdate): Promise<{
+  data: Article | null;
+  error: string | null;
+}> {
   const supabase = createClient();
 
-  const { error: viewError } = await supabase.rpc("increment_article_views", {
-    p_article_id: articleId,
-  });
+  const { data, error } = await supabase
+    .from("articles")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
 
-  if (viewError) {
-    return { data: null, error: viewError.message };
+  return { data, error: error?.message ?? null };
+}
+
+// Publish article
+export async function publishArticle(id: string): Promise<{
+  error: string | null;
+}> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("articles")
+    .update({
+      is_published: true,
+      published_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  return { error: error?.message ?? null };
+}
+
+// Delete article
+export async function deleteArticle(id: string): Promise<{
+  error: string | null;
+}> {
+  const supabase = createClient();
+  const { error } = await supabase.from("articles").delete().eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+// Increment view count
+export async function incrementArticleView(id: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.rpc("increment_article_views", { p_article_id: id });
+}
+
+// Like / Unlike article
+export async function toggleArticleLike(articleId: string, userId: string): Promise<{
+  liked: boolean;
+  error: string | null;
+}> {
+  const supabase = createClient();
+
+  const { data: existing } = await supabase
+    .from("article_likes")
+    .select("id")
+    .eq("article_id", articleId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("article_likes").delete().eq("id", existing.id);
+    await supabase
+      .from("articles")
+      .update({ likes: supabase.rpc("decrement", { x: 1 }) })
+      .eq("id", articleId);
+    return { liked: false, error: null };
+  } else {
+    await supabase.from("article_likes").insert({ article_id: articleId, user_id: userId });
+    await supabase.rpc("increment_article_likes", { p_article_id: articleId });
+    return { liked: true, error: null };
   }
+}
 
-  // Logged-in viewer থাকলে তাকে +10 XP দাও
-  if (viewerId) {
-    await supabase.rpc("award_xp", { p_user_id: viewerId, p_amount: 10 });
-  }
+// Check if user liked an article
+export async function checkArticleLike(articleId: string, userId: string): Promise<boolean> {
+  const supabase = createClient();
 
-  return { data: null, error: null };
+  const { data } = await supabase
+    .from("article_likes")
+    .select("id")
+    .eq("article_id", articleId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return !!data;
+}
+
+// Get recent articles across all worlds
+export async function getRecentArticles(limit = 10): Promise<{
+  data: ArticleWithAuthor[] | null;
+  error: string | null;
+}> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("articles")
+    .select("*, author:profiles(id, username, display_name, avatar_url, level)")
+    .eq("is_published", true)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  return { data: data as ArticleWithAuthor[], error: error?.message ?? null };
 }

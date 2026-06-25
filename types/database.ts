@@ -82,10 +82,14 @@ export interface Article {
   world_id: string | null;
   author_id: string | null;
   read_time_minutes: number;
+  read_time: number;
   complexity_level: ComplexityLevel;
   views: number;
+  views_count: number;
   likes: number;
+  likes_count: number;
   is_published: boolean;
+  published_at: string | null;
   tags: string[];
   created_at: string;
   updated_at: string;
@@ -105,6 +109,17 @@ export type ArticleUpdate = Partial<Omit<Article, "id" | "created_at">>;
 export interface ArticleWithRelations extends Article {
   author?: Pick<Profile, "id" | "username" | "display_name" | "avatar_url"> | null;
   world?: Pick<World, "id" | "name" | "color"> | null;
+}
+
+// Article এর সাথে author/world এর joined তথ্য — detail view তে দরকার হয়
+export interface ArticleLike {
+  id: string;
+  user_id: string;
+  article_id: string;
+  created_at: string;
+}
+export interface ArticleWithAuthor extends Article {
+  author: Pick<Profile, "id" | "username" | "display_name" | "avatar_url" | "level"> | null;
 }
 
 // ------------------------------------------------------------
@@ -379,3 +394,4 @@ export interface UserActivity {
   activity_count: number;
   created_at: string;
 }
+
