@@ -395,3 +395,45 @@ export interface UserActivity {
   created_at: string;
 }
 
+// ------------------------------------------------------------
+// POSTS (Phase 6 — Community)
+// ------------------------------------------------------------
+export interface Post {
+  id: string;
+  author_id: string;
+  world_id: string | null;
+  title: string;
+  content: string;
+  likes_count: number;
+  comments_count: number;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Post এর সাথে author/world এর joined তথ্য — list view তে দরকার হয়
+export interface PostLike {
+  id: string;
+  user_id: string;
+  post_id: string;
+  created_at: string;
+}
+
+// PostComment এর সাথে author এর joined তথ্য — list view তে দরকার হয়
+export interface PostComment {
+  id: string;
+  post_id: string;
+  author_id: string;
+  content: string;
+  likes_count: number;
+  created_at: string;
+}
+
+// Post এর সাথে author/world এর joined তথ্য — list view তে দরকার হয়
+export interface PostWithAuthor extends Post {
+  author: Pick<Profile, "id" | "username" | "display_name" | "avatar_url" | "level"> | null;
+}
+
+export interface PostCommentWithAuthor extends PostComment {
+  author: Pick<Profile, "id" | "username" | "display_name" | "avatar_url"> | null;
+}
