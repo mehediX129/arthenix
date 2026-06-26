@@ -42,6 +42,8 @@ export interface Profile {
   profile_visibility: ProfileVisibility;
   show_activity_feed: boolean;
   show_purchases: boolean;
+  followers_count: number;
+  following_count: number;
   created_at: string;
   freeze_count: number;
   last_active_date: string | null;
@@ -507,4 +509,12 @@ export interface NotificationWithActor extends Notification {
   actor_username: string | null;
   actor_display_name: string | null;
   actor_avatar_url: string | null;
+}
+
+// ─── Follow ──────────────────────────────────────────────────
+export interface Follow {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
 }
