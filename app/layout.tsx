@@ -4,7 +4,9 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import LiveTicker from "@/components/layout/LiveTicker";
 import { XPToastContainer } from "@/components/gamification/XPToastContainer";
+import SearchModal from "@/components/search/SearchModal";
 import { LevelUpModal } from "@/components/gamification/LevelUpModal";
+import NotificationRealtimeProvider from "@/components/notifications/NotificationRealtimeProvider";
 
 
 export const metadata: Metadata = {
@@ -25,7 +27,10 @@ export default function RootLayout({
         <LiveTicker />
         <main>{children}</main>
         <XPToastContainer />
+        <SearchModal />
         <LevelUpModal />
+        <SearchModal />
+        <NotificationRealtimeProvider />
       </body>
     </html>
   );

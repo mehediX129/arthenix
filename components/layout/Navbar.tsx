@@ -19,11 +19,17 @@ import { useUser } from "@/hooks/useUser";
 import { useUserStore } from "@/lib/store/user-store";
 import { createClient } from "@/lib/supabase/client";
 import Avatar from "@/components/ui/Avatar";
+import { useSearchStore } from "@/store/searchStore";
+import { useNotificationStore } from "@/store/notificationStore";
+import NotificationDropdown from "@/components/notifications/NotificationDropdown";
 
 export default function Navbar() {
   const router = useRouter();
   const { user, loading } = useUser();
   const clearUser = useUserStore((state) => state.clearUser);
+  const { open: openSearch } = useSearchStore();
+  const { unreadCount, loadUnreadCount } = useNotificationStore();
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const [scrolled, setScrolled] = useState(false);
   const [worldsOpen, setWorldsOpen] = useState(false);
@@ -35,6 +41,10 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (user) loadUnreadCount();
+  }, [user, loadUnreadCount]);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -159,18 +169,35 @@ export default function Navbar() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              <button className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all duration-200">
+              <button
+                onClick={openSearch}
+                title="Search (Ctrl+K)"
+                className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all duration-200"
+              >
                 <Search size={18} />
               </button>
 
               {user && (
-                <button className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all duration-200 relative">
-                  <Bell size={18} />
-                  <span
-                    className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-                    style={{ background: "#EC4899" }}
+                <div className="relative hidden md:block">
+                  <button
+                    onClick={() => setNotifOpen((v) => !v)}
+                    className="flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all duration-200 relative"
+                  >
+                    <Bell size={18} />
+                    {unreadCount > 0 && (
+                      <span
+                        className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full font-mono text-[10px] font-bold text-white flex items-center justify-center"
+                        style={{ background: "#7C3AED" }}
+                      >
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  <NotificationDropdown
+                    isOpen={notifOpen}
+                    onClose={() => setNotifOpen(false)}
                   />
-                </button>
+                </div>
               )}
 
               {/* Auth state — desktop */}

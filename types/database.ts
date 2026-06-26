@@ -437,3 +437,74 @@ export interface PostWithAuthor extends Post {
 export interface PostCommentWithAuthor extends PostComment {
   author: Pick<Profile, "id" | "username" | "display_name" | "avatar_url"> | null;
 }
+
+// ------------------------------------------------------------
+// SEARCH RESULTS (Phase 6 — Community)
+// ------------------------------------------------------------
+export interface ArticleSearchResult {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  cover_image: string | null;
+  world_id: string | null;
+  author_id: string;
+  read_time_minutes: number;
+  views: number;
+  likes: number;
+  rank: number;
+}
+
+export interface ProductSearchResult {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  price: number;
+  category: string;
+  rating_avg: number;
+  rank: number;
+}
+
+export interface UserSearchResult {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  level: string;
+  xp: number;
+}
+
+export interface SearchResults {
+  articles: ArticleSearchResult[];
+  products: ProductSearchResult[];
+  users: UserSearchResult[];
+}
+
+// ─── Notification ────────────────────────────────────────────
+export interface Notification {
+  id: string;
+  user_id: string;
+  actor_id: string | null;
+  type:
+    | "article_like"
+    | "article_comment"
+    | "post_like"
+    | "post_comment"
+    | "new_follower"
+    | "xp_milestone"
+    | "level_up"
+    | "quest_complete";
+  entity_type: "article" | "post" | "product" | null;
+  entity_id: string | null;
+  entity_title: string | null;
+  message: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationWithActor extends Notification {
+  actor_username: string | null;
+  actor_display_name: string | null;
+  actor_avatar_url: string | null;
+}
