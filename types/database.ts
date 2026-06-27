@@ -518,3 +518,36 @@ export interface Follow {
   following_id: string;
   created_at: string;
 }
+
+// ─── Seller Dashboard ────────────────────────────────────────
+export interface SellerStats {
+  total_products: number;
+  active_products: number;
+  total_sales: number;
+  total_revenue: number;
+  this_month: number;
+  last_month: number;
+}
+
+export interface SellerProduct {
+  id: string;
+  title: string;
+  price: number;
+  original_price: number | null;
+  category: string;
+  is_active: boolean;
+  sales_count: number;
+  rating_avg: number;
+  thumbnail_url: string | null;
+  created_at: string;
+}
+
+export interface SellerOrder {
+  id: string;
+  product_id: string;
+  product_title: string;
+  buyer_username: string;
+  amount: number;
+  status: string;
+  created_at: string;
+}

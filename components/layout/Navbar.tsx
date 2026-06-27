@@ -247,13 +247,21 @@ export default function Navbar() {
                             </p>
                           </div>
 
-                          <Link
+                     <Link
                             href="/dashboard"
                             onClick={() => setAccountMenuOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
                           >
                             <BarChart2 size={15} />
                             Dashboard
+                          </Link>
+                          <Link
+                            href="/seller"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                          >
+                            <ShoppingBag size={15} />
+                            Seller Dashboard
                           </Link>
 
                           <Link
