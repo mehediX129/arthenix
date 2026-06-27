@@ -402,7 +402,7 @@ export default function DashboardPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="divide-y divide-white/[0.04]">
+                <div className="divide-y divide-white/[0.04] overflow-x-auto">
                   {articles.map((article) => {
                     const world = worlds.find((w) => w.id === article.world_id);
                     return (

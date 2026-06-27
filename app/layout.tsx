@@ -7,6 +7,7 @@ import { XPToastContainer } from "@/components/gamification/XPToastContainer";
 import { LevelUpModal } from "@/components/gamification/LevelUpModal";
 import SearchModal from "@/components/search/SearchModal";
 import NotificationRealtimeProvider from "@/components/notifications/NotificationRealtimeProvider";
+import BottomNav from "@/components/layout/BottomNav";
 
 export const metadata: Metadata = {
   title: "Arthenix — The Universe of Human Knowledge",
@@ -25,11 +26,12 @@ export default function RootLayout({
         <Navbar />
         <LiveTicker />
         {/* pt-[100px] = Navbar (64px) + LiveTicker (36px) */}
-        <main className="pt-[100px]">{children}</main>
+        <main className="pt-[100px] pb-20 md:pb-0">{children}</main>
         <XPToastContainer />
         <LevelUpModal />
         <SearchModal />
         <NotificationRealtimeProvider />
+        <BottomNav />
       </body>
     </html>
   );

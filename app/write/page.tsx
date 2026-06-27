@@ -428,7 +428,7 @@ export default function WritePage() {
 
         {/* Toolbar — only in edit mode */}
         {!preview && (
-          <div className="max-w-4xl mx-auto px-4 pb-2 flex items-center gap-0.5 border-t border-white/[0.04]">
+          <div className="max-w-4xl mx-auto px-4 pb-2 flex items-center gap-0.5 border-t border-white/[0.04] overflow-x-auto scrollbar-none">
             {toolbarActions.map((t, i) => (
               <ToolbarBtn
                 key={i}

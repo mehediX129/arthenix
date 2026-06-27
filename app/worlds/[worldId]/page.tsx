@@ -362,7 +362,7 @@ export default function WorldPage() {
           </div>
 
           {/* ── Right Sidebar ── */}
-          <div className="lg:w-72 shrink-0 space-y-6">
+          <div className="lg:w-72 shrink-0 space-y-6 w-full">
 
             {/* Trending this week */}
             {trending.length > 0 && (

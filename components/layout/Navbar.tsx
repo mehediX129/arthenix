@@ -442,6 +442,20 @@ export default function Navbar() {
                         👤 My Profile
                       </Link>
                       <Link
+                        href="/dashboard"
+                        onClick={() => setMobileOpen(false)}
+                        className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
+                      >
+                        📊 Dashboard
+                      </Link>
+                      <Link
+                        href="/seller"
+                        onClick={() => setMobileOpen(false)}
+                        className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
+                      >
+                        🏪 Seller Dashboard
+                      </Link>
+                      <Link
                         href="/profile/purchases"
                         onClick={() => setMobileOpen(false)}
                         className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
