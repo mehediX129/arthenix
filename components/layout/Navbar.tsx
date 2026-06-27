@@ -13,6 +13,7 @@ import {
   LogOut,
   User as UserIcon,
   ShoppingBag,
+  BarChart2,
 } from "lucide-react";
 import { worlds } from "@/lib/worlds-data";
 import { useUser } from "@/hooks/useUser";
@@ -245,6 +246,15 @@ export default function Navbar() {
                               {user.xp} XP &middot; {user.level}
                             </p>
                           </div>
+
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                          >
+                            <BarChart2 size={15} />
+                            Dashboard
+                          </Link>
 
                           <Link
                             href={`/profile/${user.username}`}
