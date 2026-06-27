@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { togglePostLike } from "@/lib/db/posts";
 import { useUser } from "@/hooks/useUser";
 import { useXPToastStore } from "@/store/xpToastStore";
+import { awardXP } from "@/lib/db/xp";
 import { worlds } from "@/lib/worlds-data";
 import type { PostWithAuthor } from "@/types/database";
 
@@ -44,7 +45,10 @@ export function PostCard({ post, index = 0, onDelete, initialLiked = false }: Po
     const { liked: newLiked } = await togglePostLike(post.id, user.id);
     setLiked(newLiked);
     setLikesCount((prev) => (newLiked ? prev + 1 : prev - 1));
-    if (newLiked) addToast(2, "Post liked!", "❤️");
+    if (newLiked) {
+      addToast(2, "Post liked!", "❤️");
+      if (user) await awardXP(user.id, "post_like");
+    }
   }
 
   return (

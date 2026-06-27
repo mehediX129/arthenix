@@ -7,6 +7,7 @@ import { createPost } from "@/lib/db/posts";
 import { useUser } from "@/hooks/useUser";
 import { worlds } from "@/lib/worlds-data";
 import { useXPToastStore } from "@/store/xpToastStore";
+import { awardXP } from "@/lib/db/xp";
 import type { PostWithAuthor } from "@/types/database";
 
 interface CreatePostProps {
@@ -50,6 +51,7 @@ export function CreatePost({ onPostCreated }: CreatePostProps) {
       };
       onPostCreated(postWithAuthor);
       addToast(15, "Post created!", "💬");
+      if (user) await awardXP(user.id, "post_create");
       setTitle("");
       setContent("");
       setSelectedWorld("");

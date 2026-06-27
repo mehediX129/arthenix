@@ -25,8 +25,9 @@ import { useUser } from "@/hooks/useUser";
 import { createArticle, updateArticle, publishArticle } from "@/lib/db/articles";
 import { worlds } from "@/lib/worlds-data";
 import { useXPToastStore } from "@/store/xpToastStore";
-import { createClient } from "@/lib/supabase/client";
 
+import { createClient } from "@/lib/supabase/client";
+import { awardXP } from "@/lib/db/xp";
 // ─── Helpers ────────────────────────────────────────────────
 
 function generateSlug(title: string): string {
@@ -313,6 +314,7 @@ export default function WritePage() {
       const { error } = await publishArticle(id);
       if (!error) {
         addToast(50, "Article published!", "✍️");
+        await awardXP(user.id, "article_publish");
         router.push(user.username ? `/profile/${user.username}` : "/");
       }
     }

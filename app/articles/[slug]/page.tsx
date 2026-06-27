@@ -8,6 +8,7 @@ import { getArticleBySlug, toggleArticleLike, checkArticleLike, incrementArticle
 import { useUser } from "@/hooks/useUser";
 import { worlds } from "@/lib/worlds-data";
 import { useXPToastStore } from "@/store/xpToastStore";
+import { awardXP } from "@/lib/db/xp";
 import type { ArticleWithAuthor } from "@/types/database";
 
 export default function ArticleDetailPage() {
@@ -51,7 +52,10 @@ export default function ArticleDetailPage() {
     const { liked: newLiked } = await toggleArticleLike(article.id, user.id);
     setLiked(newLiked);
     setLikesCount((prev) => (newLiked ? prev + 1 : prev - 1));
-    if (newLiked) addToast(5, "Article liked!", "❤️");
+    if (newLiked) {
+      addToast(5, "Article liked!", "❤️");
+      if (user) await awardXP(user.id, "article_like");
+    }
   }
 
   if (loading) {

@@ -4,10 +4,9 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import LiveTicker from "@/components/layout/LiveTicker";
 import { XPToastContainer } from "@/components/gamification/XPToastContainer";
-import SearchModal from "@/components/search/SearchModal";
 import { LevelUpModal } from "@/components/gamification/LevelUpModal";
+import SearchModal from "@/components/search/SearchModal";
 import NotificationRealtimeProvider from "@/components/notifications/NotificationRealtimeProvider";
-
 
 export const metadata: Metadata = {
   title: "Arthenix — The Universe of Human Knowledge",
@@ -25,9 +24,9 @@ export default function RootLayout({
       <body className="bg-primary-bg text-text-primary font-body antialiased">
         <Navbar />
         <LiveTicker />
-        <main>{children}</main>
+        {/* pt-[100px] = Navbar (64px) + LiveTicker (36px) */}
+        <main className="pt-[100px]">{children}</main>
         <XPToastContainer />
-        <SearchModal />
         <LevelUpModal />
         <SearchModal />
         <NotificationRealtimeProvider />
