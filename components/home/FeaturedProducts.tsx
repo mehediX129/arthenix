@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ShoppingBag, Star, ArrowRight, Package } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrencyStore } from "@/store/currencyStore";
 
 interface FeaturedProduct {
   id: string;
@@ -22,6 +23,7 @@ interface FeaturedProduct {
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const { format } = useCurrencyStore();
 
   useEffect(() => {
     const supabase = createClient();
@@ -130,11 +132,11 @@ export default function FeaturedProducts() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="font-mono text-base font-black text-emerald-400">
-                          ৳{product.price}
+                          {format(product.price)}
                         </span>
                         {product.original_price && (
                           <span className="font-mono text-xs text-text-muted line-through ml-1.5">
-                            ৳{product.original_price}
+                            {format(product.original_price)}
                           </span>
                         )}
                       </div>

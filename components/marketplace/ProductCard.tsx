@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, Star, ShoppingBag, Flame } from "lucide-react";
 import type { ProductWithSeller } from "@/types/database";
+import { useCurrencyStore } from "@/store/currencyStore";
 
 export interface ProductCardProps {
   product: ProductWithSeller;
@@ -49,6 +50,7 @@ export default function ProductCard({
   onToggleWishlist,
   onBuyNow,
 }: ProductCardProps) {
+  const { format } = useCurrencyStore();
   const [wishlisted, setWishlisted] = useState(isWishlisted);
   const [timeLeft, setTimeLeft] = useState(() =>
     product.flash_sale_end ? getTimeLeft(product.flash_sale_end) : null
@@ -222,7 +224,7 @@ export default function ProductCard({
             <div className="flex items-center gap-2 mt-3">
               {hasDiscount && (
                 <span className="text-xs text-text-muted line-through">
-                  ৳{product.original_price!.toLocaleString()}
+                  {format(product.original_price!)}
                 </span>
               )}
               <span className="font-display font-bold text-lg text-text-primary">

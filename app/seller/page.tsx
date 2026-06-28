@@ -22,14 +22,10 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
+import { useCurrencyStore } from "@/store/currencyStore";
 import type { SellerStats, SellerProduct, SellerOrder } from "@/types/database";
 
 // ─── Helpers ─────────────────────────────────────────────────
-
-function formatCurrency(n: number): string {
-  if (n >= 1000) return `৳${(n / 1000).toFixed(1)}K`;
-  return `৳${n}`;
-}
 
 function formatCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
@@ -104,6 +100,7 @@ function StatCard({
 
 export default function SellerDashboardPage() {
   const { user, loading: userLoading } = useUser();
+  const { format } = useCurrencyStore();
   const router = useRouter();
 
   const [stats, setStats] = useState<SellerStats | null>(null);
@@ -209,8 +206,8 @@ export default function SellerDashboardPage() {
               <StatCard
                 icon={DollarSign}
                 label="TOTAL REVENUE"
-                value={formatCurrency(stats?.total_revenue ?? 0)}
-                sub={`${formatCurrency(stats?.this_month ?? 0)} this month`}
+                value={format(stats?.total_revenue ?? 0)}
+                sub={`${format(stats?.this_month ?? 0)} this month`}
                 color="#10B981"
                 trend={revenueTrend}
                 delay={0}
@@ -233,7 +230,7 @@ export default function SellerDashboardPage() {
               <StatCard
                 icon={TrendingUp}
                 label="THIS MONTH"
-                value={formatCurrency(stats?.this_month ?? 0)}
+                value={format(stats?.this_month ?? 0)}
                 sub="vs last month"
                 color="#F59E0B"
                 trend={revenueTrend}
@@ -287,7 +284,6 @@ export default function SellerDashboardPage() {
                           key={product.id}
                           className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.02] transition-colors group"
                         >
-                          {/* Thumbnail */}
                           <div
                             className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center overflow-hidden"
                             style={{ background: "rgba(6,182,212,0.1)" }}
@@ -303,18 +299,17 @@ export default function SellerDashboardPage() {
                             )}
                           </div>
 
-                          {/* Info */}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-text-primary truncate group-hover:text-cyan-300 transition-colors">
                               {product.title}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="font-mono text-xs text-emerald-400 font-bold">
-                                ৳{product.price}
+                                {format(product.price)}
                               </span>
                               {product.original_price && (
                                 <span className="font-mono text-xs text-text-muted line-through">
-                                  ৳{product.original_price}
+                                  {format(product.original_price)}
                                 </span>
                               )}
                               <span className="font-mono text-xs text-text-muted">
@@ -329,7 +324,6 @@ export default function SellerDashboardPage() {
                             </div>
                           </div>
 
-                          {/* Toggle active */}
                           <button
                             onClick={() => handleToggleActive(product.id)}
                             disabled={togglingId === product.id}
@@ -404,7 +398,7 @@ export default function SellerDashboardPage() {
                               </p>
                             </div>
                             <span className="font-mono text-xs font-bold text-emerald-400 shrink-0">
-                              ৳{order.amount}
+                              {format(order.amount)}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 mt-1.5">

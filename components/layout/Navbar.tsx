@@ -23,12 +23,14 @@ import Avatar from "@/components/ui/Avatar";
 import { useSearchStore } from "@/store/searchStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
+import { useCurrencyStore } from "@/store/currencyStore";
 
 export default function Navbar() {
   const router = useRouter();
   const { user, loading } = useUser();
   const clearUser = useUserStore((state) => state.clearUser);
   const { open: openSearch } = useSearchStore();
+  const { currency, toggle: toggleCurrency } = useCurrencyStore();
   const { unreadCount, loadUnreadCount } = useNotificationStore();
   const [notifOpen, setNotifOpen] = useState(false);
 
@@ -170,6 +172,18 @@ export default function Navbar() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
+              <button
+                onClick={toggleCurrency}
+                title="Toggle currency"
+                className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-mono text-xs font-bold transition-colors"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {currency === "USD" ? "$ USD" : "৳ BDT"}
+              </button>
               <button
                 onClick={openSearch}
                 title="Search (Ctrl+K)"

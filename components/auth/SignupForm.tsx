@@ -27,9 +27,9 @@ const STRENGTH_CONFIG: Record<
   Exclude<StrengthLevel, null>,
   { label: string; color: string; width: string }
 > = {
-  weak: { label: "দুর্বল", color: "#EF4444", width: "33%" },
-  medium: { label: "মাঝারি", color: "#F59E0B", width: "66%" },
-  strong: { label: "শক্তিশালী", color: "#10B981", width: "100%" },
+  weak: { label: "Weak", color: "#EF4444", width: "33%" },
+  medium: { label: "Medium", color: "#F59E0B", width: "66%" },
+  strong: { label: "Strong", color: "#10B981", width: "100%" },
 };
 
 export default function SignupForm() {
@@ -68,11 +68,11 @@ export default function SignupForm() {
 
     if (!canSubmit) {
       if (password.length < 8) {
-        setError("পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।");
+        setError("Password must be at least 8 characters.");
       } else if (!passwordsMatch) {
-        setError("পাসওয়ার্ড দুটো মিলছে না।");
+        setError("Passwords do not match.");
       } else if (!agreedToTerms) {
-        setError("চালিয়ে যেতে Terms of Service-এ সম্মত হতে হবে।");
+        setError("You must agree to the Terms of Service.");
       }
       return;
     }
@@ -99,8 +99,8 @@ export default function SignupForm() {
     if (signUpError) {
       setError(
         signUpError.message === "User already registered"
-          ? "এই ইমেইল দিয়ে আগে থেকেই একটা অ্যাকাউন্ট আছে।"
-          : "অ্যাকাউন্ট তৈরি করা যায়নি। আবার চেষ্টা করো।"
+          ? "An account with this email already exists."
+          : "Failed to create account. Please try again."
       );
       return;
     }
@@ -136,23 +136,23 @@ export default function SignupForm() {
         </div>
 
         <h1 className="font-display text-xl font-bold text-text-primary">
-          ইনবক্স চেক করো
+          Check your inbox
         </h1>
         <p className="text-text-secondary text-sm mt-2.5 leading-relaxed">
-          আমরা <span className="text-text-primary font-medium">{email}</span>{" "}
-          এ একটা confirmation link পাঠিয়েছি। অ্যাকাউন্ট সক্রিয় করতে সেই
-          link-এ ক্লিক করো।
+          We sent a confirmation link to{" "}
+          <span className="text-text-primary font-medium">{email}</span>.
+          Click the link to activate your account.
         </p>
 
         <p className="text-text-muted text-xs mt-5">
-          ইমেইল না পেলে Spam/Junk ফোল্ডার চেক করো।
+          Check your inbox for the confirmation email.
         </p>
 
         <Link
           href="/login"
           className="inline-block mt-6 text-sm font-medium text-[#06B6D4] hover:text-[#7C3AED] transition-colors"
         >
-          Sign in পেজে ফিরে যাও
+          Sign in to your account
         </Link>
       </motion.div>
     );
@@ -201,7 +201,7 @@ export default function SignupForm() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="তোমার নাম"
+            placeholder="Your name"
             className="w-full rounded-lg bg-secondary-bg border border-white/10 px-4 py-2.5 text-text-primary text-sm placeholder:text-text-muted outline-none transition-all focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20"
           />
         </div>
@@ -258,7 +258,7 @@ export default function SignupForm() {
                 className="text-xs mt-1 inline-block"
                 style={{ color: STRENGTH_CONFIG[strength].color }}
               >
-                পাসওয়ার্ড: {STRENGTH_CONFIG[strength].label}
+                Password: {STRENGTH_CONFIG[strength].label}
               </span>
             </div>
           )}
