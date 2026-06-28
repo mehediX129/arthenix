@@ -121,10 +121,11 @@ export default function SellerDashboardPage() {
     async function load() {
       setLoading(true);
       const supabase = createClient();
+      if (!user) return;
       const [statsRes, productsRes, ordersRes] = await Promise.all([
-        supabase.rpc("get_seller_stats"),
-        supabase.rpc("get_seller_products"),
-        supabase.rpc("get_seller_orders", { p_limit: 10 }),
+        supabase.rpc("get_seller_stats", { p_user_id: user.id }),
+        supabase.rpc("get_seller_products", { p_user_id: user.id }),
+        supabase.rpc("get_seller_orders", { p_user_id: user.id, p_limit: 10 }),
       ]);
       if (statsRes.data) setStats(statsRes.data as SellerStats);
       if (productsRes.data) setProducts(productsRes.data as SellerProduct[]);

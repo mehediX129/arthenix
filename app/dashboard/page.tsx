@@ -190,10 +190,11 @@ export default function DashboardPage() {
     async function load() {
       setLoading(true);
       const supabase = createClient();
+      if (!user) return;
       const [statsRes, articlesRes, chartRes] = await Promise.all([
-        supabase.rpc("get_dashboard_stats"),
-        supabase.rpc("get_my_articles_analytics"),
-        supabase.rpc("get_views_over_time"),
+        supabase.rpc("get_dashboard_stats", { p_user_id: user.id }),
+        supabase.rpc("get_my_articles_analytics", { p_user_id: user.id }),
+        supabase.rpc("get_views_over_time", { p_user_id: user.id }),
       ]);
       if (statsRes.data) setStats(statsRes.data as DashboardStats);
       if (articlesRes.data) setArticles(articlesRes.data as ArticleRow[]);
