@@ -228,7 +228,7 @@ export default function ProductCard({
                 </span>
               )}
               <span className="font-display font-bold text-lg text-text-primary">
-                ৳{product.price.toLocaleString()}
+                {format(product.price)}
               </span>
               {hasDiscount && (
                 <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400">

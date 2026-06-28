@@ -3,6 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, SlidersHorizontal } from "lucide-react";
+import { useCurrencyStore } from "@/store/currencyStore";
 import type { ProductCategory, ProductFilters } from "@/types/database";
 
 interface FilterSidebarProps {
@@ -21,11 +22,18 @@ const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "tool", label: "Tools" },
 ];
 
-const PRICE_RANGES: { label: string; min: number; max: number | undefined }[] = [
-  { label: "Under Tk 500", min: 0, max: 500 },
-  { label: "Tk 500 - Tk 2,000", min: 500, max: 2000 },
-  { label: "Tk 2,000 - Tk 5,000", min: 2000, max: 5000 },
-  { label: "Tk 5,000+", min: 5000, max: undefined },
+const USD_RANGES = [
+  { label: "Under $5",    min: 0,  max: 5        },
+  { label: "$5 – $20",   min: 5,  max: 20       },
+  { label: "$20 – $50",  min: 20, max: 50       },
+  { label: "$50+",        min: 50, max: undefined },
+];
+
+const BDT_RANGES = [
+  { label: "Under ৳500",        min: 0,    max: 500       },
+  { label: "৳500 – ৳2,000",    min: 500,  max: 2000      },
+  { label: "৳2,000 – ৳5,000",  min: 2000, max: 5000      },
+  { label: "৳5,000+",           min: 5000, max: undefined  },
 ];
 
 const RATINGS = [4, 3, 2];
@@ -37,6 +45,9 @@ export default function FilterSidebar({
   isOpen,
   onClose,
 }: FilterSidebarProps) {
+  const { currency } = useCurrencyStore();
+  const PRICE_RANGES = currency === "USD" ? USD_RANGES : BDT_RANGES;
+
   function toggleCategory(category: ProductCategory) {
     onChange({
       ...filters,
@@ -67,6 +78,7 @@ export default function FilterSidebar({
 
   const content = (
     <div className="space-y-7">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <SlidersHorizontal size={16} className="text-text-secondary" />
@@ -90,6 +102,7 @@ export default function FilterSidebar({
         )}
       </div>
 
+      {/* Category */}
       <div>
         <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
           Category
@@ -114,10 +127,22 @@ export default function FilterSidebar({
         </div>
       </div>
 
+      {/* Price */}
       <div>
-        <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
-          Price
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide">
+            Price
+          </h3>
+          <span
+            className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-lg"
+            style={{
+              background: currency === "USD" ? "rgba(124,58,237,0.15)" : "rgba(6,182,212,0.15)",
+              color: currency === "USD" ? "#A78BFA" : "#67E8F9",
+            }}
+          >
+            {currency}
+          </span>
+        </div>
         <div className="space-y-2">
           {PRICE_RANGES.map((range) => (
             <label
@@ -141,6 +166,7 @@ export default function FilterSidebar({
         </div>
       </div>
 
+      {/* Rating */}
       <div>
         <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">
           Minimum Rating
