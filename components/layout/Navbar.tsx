@@ -191,6 +191,12 @@ export default function Navbar() {
               >
                 <Search size={18} />
               </button>
+              <Link
+                href="/search"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors"
+              >
+                Search
+              </Link>
 
               {user && (
                 <div className="relative hidden md:block">

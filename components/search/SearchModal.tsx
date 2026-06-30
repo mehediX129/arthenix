@@ -375,9 +375,13 @@ export default function SearchModal() {
                     to close
                   </span>
                 </div>
-                <span className="font-mono text-xs text-text-muted opacity-40">
-                  ARTHENIX
-                </span>
+                <Link
+                  href={query ? `/search?q=${encodeURIComponent(query)}` : "/search"}
+                  onClick={close}
+                  className="font-mono text-xs text-text-muted opacity-40 hover:opacity-100 hover:text-violet-400 transition-all"
+                >
+                  See all results →
+                </Link>
               </div>
             </div>
           </motion.div>
