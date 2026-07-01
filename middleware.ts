@@ -43,8 +43,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // লগইন করা ইউজার যদি login/signup page-এ যেতে চায়, homepage এ পাঠিয়ে দাও
-  if ((pathname === "/login" || pathname === "/signup") && user) {
+  // লগইন করা ইউজার যদি login/signup page-এ যেতে চায়, homepage এ পাঠিয়ে দাও —
+  // তবে OAuth onboarding flow চলাকালীন (?onboarding=1) এই redirect স্কিপ
+  // করতে হবে, না হলে নতুন Google/Discord user সরাসরি home এ চলে যাবে
+  // আর World Selection → Tour → Achievement flow টা স্কিপ হয়ে যাবে।
+  const isOnboarding = request.nextUrl.searchParams.get("onboarding") === "1";
+
+  if ((pathname === "/login" || pathname === "/signup") && user && !isOnboarding) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

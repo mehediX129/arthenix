@@ -175,3 +175,38 @@ export async function getRecentArticles(limit = 10): Promise<{
 
   return { data: data as ArticleWithAuthor[], error: error?.message ?? null };
 }
+
+/**
+ * একটা article প্রথমবার পড়ার রেকর্ড রাখে — profile page-এর
+ * real "Articles Read" stat-এর জন্য। Logged-out user হলে এটা
+ * caller-এর দায়িত্ব এই function না কল করা।
+ */
+export async function recordArticleRead(
+  userId: string,
+  articleId: string
+): Promise<void> {
+  const supabase = createClient();
+  await supabase.rpc("record_article_read", {
+    p_user_id: userId,
+    p_article_id: articleId,
+  });
+}
+
+/**
+ * একজন user মোট কয়টা ইউনিক article পড়েছে সেটার count আনে।
+ * Profile page-এর StatsRow-এ ব্যবহারের জন্য।
+ */
+export async function getArticlesReadCount(userId: string): Promise<number> {
+  const supabase = createClient();
+  const { count, error } = await supabase
+    .from("article_reads")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("getArticlesReadCount failed:", error.message);
+    return 0;
+  }
+
+  return count ?? 0;
+}

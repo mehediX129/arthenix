@@ -311,16 +311,15 @@ export default function SignupForm() {
             className="mt-0.5 h-4 w-4 rounded border-white/20 bg-secondary-bg accent-[#7C3AED]"
           />
           <span className="text-xs text-text-secondary">
-            আমি{" "}
+            I agree to the{" "}
             <Link href="/terms" className="text-[#06B6D4] hover:underline">
               Terms of Service
             </Link>{" "}
-            ও{" "}
+            and{" "}
             <Link href="/privacy" className="text-[#06B6D4] hover:underline">
-              Privacy Policy
+            Privacy Policy
             </Link>
-            -এ সম্মত
-          </span>
+            </span>
         </label>
 
         <button

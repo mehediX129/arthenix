@@ -2,21 +2,24 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, Zap } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import StatsRow from "@/components/profile/StatsRow";
 import WorldAffinityChart from "@/components/profile/WorldAffinityChart";
 import BadgesGrid from "@/components/profile/BadgesGrid";
 import ActivityFeed from "@/components/profile/ActivityFeed";
 import { DailyQuestPanel } from "@/components/gamification/DailyQuestPanel";
-import { getProfileByUsername, getUserBadges, getWorldAffinity } from "@/lib/db/profiles";
+import {
+  getProfileByUsername,
+  getUserBadges,
+  getWorldAffinity,
+} from "@/lib/db/profiles";
 import { getAllBadges } from "@/lib/db/badges";
 import { useUser } from "@/hooks/useUser";
 import { worlds } from "@/lib/worlds-data";
-import { useXPToastStore } from "@/store/xpToastStore";
-import { useLevelUpStore } from "@/store/levelUpStore";
 import { StreakCard } from "@/components/gamification/StreakCard";
 import { ActivityHeatmap } from "@/components/gamification/ActivityHeatmap";
+import { getArticlesReadCount } from "@/lib/db/articles";
 
 import type {
   Profile,
@@ -29,8 +32,7 @@ export default function ProfilePage() {
   const params = useParams();
   const username = params.username as string;
   const { user: currentUser } = useUser();
-  const { addToast } = useXPToastStore();
-  const { show: showLevelUp } = useLevelUpStore();
+  const [articlesRead, setArticlesRead] = useState(0);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
@@ -54,15 +56,18 @@ export default function ProfilePage() {
       const p = profileResult.data;
       setProfile(p);
 
-      const [badgesAllResult, earnedResult, affinityResult] = await Promise.all([
-        getAllBadges(),
-        getUserBadges(p.id),
-        getWorldAffinity(p.id),
-      ]);
+      const [badgesAllResult, earnedResult, affinityResult, readCount] =
+        await Promise.all([
+          getAllBadges(),
+          getUserBadges(p.id),
+          getWorldAffinity(p.id),
+          getArticlesReadCount(p.id),
+        ]);
 
       if (badgesAllResult.data) setAllBadges(badgesAllResult.data);
       if (earnedResult.data) setEarnedBadges(earnedResult.data);
       if (affinityResult.data) setAffinityData(affinityResult.data);
+      setArticlesRead(readCount);
 
       setLoading(false);
     }
@@ -97,14 +102,7 @@ export default function ProfilePage() {
     .filter((w) => profile.selected_worlds.includes(w.id))
     .map((w) => `${w.emoji} ${w.name.split(" ")[0]}`);
 
-  const articlesRead = 0;
 
-  const xpDemos = [
-    { xp: 50, reason: "Article published!", icon: "📝" },
-    { xp: 10, reason: "Daily login bonus", icon: "🔥" },
-    { xp: 25, reason: "Review submitted", icon: "⭐" },
-    { xp: 100, reason: "Level up!", icon: "🚀" },
-  ];
 
   return (
     <div className="min-h-screen bg-primary-bg px-4 py-8 md:px-8">
@@ -123,40 +121,14 @@ export default function ProfilePage() {
           isSeller={profile.is_seller}
         />
 
-        {/* Dev Demo Panel — remove in production */}
-        {isOwnProfile && (
-          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-            <p className="text-xs text-text-muted mb-3 flex items-center gap-1.5">
-              <Zap size={12} className="text-yellow-400" />
-              XP Toast Demo (dev only)
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {xpDemos.map((demo) => (
-                <button
-                  key={demo.reason}
-                  onClick={() => addToast(demo.xp, demo.reason, demo.icon)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 text-xs font-medium transition-colors"
-                >
-                  {demo.icon} +{demo.xp} XP
-                </button>
-              ))}
-              {/* Level Up Demo button */}
-              <button
-                onClick={() => {
-                  console.log("profile.level:", profile.level, typeof profile.level);
-                  showLevelUp((Number(profile.level) ?? 1) + 1);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-400/10 hover:bg-purple-400/20 text-purple-400 text-xs font-medium transition-colors"
-              >
-                🚀 Level Up Demo
-              </button>
-            </div>
-          </div>
-        )}
-
         {isOwnProfile && (
           <>
-            <DailyQuestPanel userId={profile.id} />
+            <DailyQuestPanel
+              userId={profile.id}
+              onXPAwarded={(newXP) =>
+                setProfile((prev) => (prev ? { ...prev, xp: newXP } : prev))
+              }
+            />
             <StreakCard
               userId={profile.id}
               initialStreakDays={profile.streak_days ?? 0}

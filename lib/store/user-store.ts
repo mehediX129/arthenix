@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
 import { getLevelFromXP, type UserLevel } from "@/lib/utils/gamification";
+import { checkAndUpdateStreak } from "@/lib/db/streak";
 
 export interface ArthenixUser {
   id: string;
@@ -11,6 +12,7 @@ export interface ArthenixUser {
   level: UserLevel;
   selected_worlds: string[];
   is_seller: boolean;
+  streak_days: number;
 }
 
 interface UserStoreState {
@@ -33,8 +35,10 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
   clearUser: () => set({ user: null, loading: false, initialized: true }),
 
   /**
-   * Supabase auth session + users table থেকে পুরো profile fetch করে
-   * এবং store-এ populate করে। App mount হওয়ার সময় একবার কল হবে।
+   * Supabase auth session + profiles table থেকে পুরো user data fetch করে
+   * store-এ populate করে। App mount হওয়ার সময় একবার call হয়।
+   * Streak update এখানেই trigger হয় — user load হওয়ার সাথে সাথে,
+   * তাই প্রতিদিন app খুললেই streak count বাড়ে।
    */
   fetchUser: async () => {
     set({ loading: true });
@@ -51,11 +55,18 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("username, avatar_url, xp, selected_worlds, is_seller")
+      .select("username, avatar_url, xp, selected_worlds, is_seller, streak_days")
       .eq("id", authUser.id)
       .single();
 
     const xp = profile?.xp ?? 0;
+
+    // Streak atomically update করা হচ্ছে — same-day guard RPC-এর ভেতরেই
+    // আছে, তাই বারবার app refresh করলেও streak ভুলভাবে বাড়বে না।
+    const streakResult = await checkAndUpdateStreak(authUser.id);
+    const streakDays = streakResult.error
+      ? (profile?.streak_days ?? 0)
+      : streakResult.streakDays;
 
     set({
       user: {
@@ -71,6 +82,7 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
         level: getLevelFromXP(xp),
         selected_worlds: profile?.selected_worlds ?? [],
         is_seller: profile?.is_seller ?? false,
+        streak_days: streakDays,
       },
       loading: false,
       initialized: true,
@@ -78,8 +90,8 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
   },
 
   /**
-   * XP optimistically আপডেট করে (যেমন কুইজ শেষ করার সাথে সাথেই UI আপডেট দেখানোর জন্য),
-   * level recalculate করে নেয় নতুন XP অনুযায়ী।
+   * XP optimistically আপডেট করে (quest complete করার সাথে সাথে
+   * UI-তে XP দেখানোর জন্য), level recalculate করে নেয়।
    */
   updateXP: (newXP) => {
     const current = get().user;

@@ -12,7 +12,6 @@ import {
   getArticleBySlug,
   toggleArticleLike,
   checkArticleLike,
-  incrementArticleView,
   getArticlesByWorld,
 } from "@/lib/db/articles";
 import { useUser } from "@/hooks/useUser";
@@ -21,6 +20,10 @@ import { useXPToastStore } from "@/store/xpToastStore";
 import { awardXP } from "@/lib/db/xp";
 import FollowButton from "@/components/profile/FollowButton";
 import type { ArticleWithAuthor } from "@/types/database";
+import {
+  incrementArticleView,
+  recordArticleRead,
+} from "@/lib/db/articles";
 
 // ─── Markdown Parser ─────────────────────────────────────────
 
@@ -241,6 +244,13 @@ export default function ArticleDetailPage() {
       setArticle(data);
       setLikesCount(data.likes_count ?? data.likes ?? 0);
       await incrementArticleView(data.id);
+      
+      // Logged-in user হলে personal reading history-তে record করা হয়
+      // (anonymous/logged-out visit শুধু global views_count বাড়ায়,
+      //  per-user stat-এ যোগ হয় না)।
+      if (user) {
+        await recordArticleRead(user.id, data.id);
+      }
 
       if (user) {
         const isLiked = await checkArticleLike(data.id, user.id);

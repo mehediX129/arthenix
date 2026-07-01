@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Quest, UserQuestWithQuest } from "@/types/database";
+import { awardXP, type AwardXPResult } from "@/lib/db/gamification";
 
 // Fetch today's assigned quests for a user (creates them if not exists)
 export async function getTodayQuests(userId: string): Promise<{
@@ -83,20 +84,37 @@ export async function updateQuestProgress(
   return { error: error?.message ?? null };
 }
 
-// Complete a quest manually (for demo/testing)
+/**
+ * Quest সম্পূর্ণ করে এবং real XP award করে। `.eq("completed", false)`
+ * গার্ড থাকায় একই quest দুইবার complete করে double XP পাওয়া যায় না।
+ */
 export async function completeQuest(
-  userQuestId: string
-): Promise<{ error: string | null }> {
+  userQuestId: string,
+  userId: string,
+  xpReward: number
+): Promise<{ error: string | null; xpResult: AwardXPResult | null }> {
   const supabase = createClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("user_quests")
     .update({
       completed: true,
       completed_at: new Date().toISOString(),
       progress: 999,
     })
-    .eq("id", userQuestId);
+    .eq("id", userQuestId)
+    .eq("completed", false)
+    .select("id");
 
-  return { error: error?.message ?? null };
+  if (error) {
+    return { error: error.message, xpResult: null };
+  }
+
+  // data.length === 0 মানে quest টা আগেই complete করা ছিল — XP আবার দেওয়া হবে না
+  if (!data || data.length === 0) {
+    return { error: null, xpResult: null };
+  }
+
+  const xpResult = await awardXP(userId, xpReward);
+  return { error: null, xpResult };
 }

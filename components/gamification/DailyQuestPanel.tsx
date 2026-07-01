@@ -5,17 +5,20 @@ import { Loader2, Swords } from "lucide-react";
 import { DailyQuestCard } from "./DailyQuestCard";
 import { getTodayQuests, completeQuest } from "@/lib/db/quests";
 import { useXPToastStore } from "@/store/xpToastStore";
+import { useLevelUpStore } from "@/store/levelUpStore";
 import type { UserQuestWithQuest } from "@/types/database";
 
 interface DailyQuestPanelProps {
   userId: string;
+  onXPAwarded?: (newXP: number) => void;
 }
 
-export function DailyQuestPanel({ userId }: DailyQuestPanelProps) {
+export function DailyQuestPanel({ userId, onXPAwarded }: DailyQuestPanelProps) {
   const [quests, setQuests] = useState<UserQuestWithQuest[]>([]);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState<string | null>(null);
   const { addToast } = useXPToastStore();
+  const { show: showLevelUp } = useLevelUpStore();
 
   useEffect(() => {
     async function load() {
@@ -34,7 +37,7 @@ export function DailyQuestPanel({ userId }: DailyQuestPanelProps) {
     icon: string
   ) {
     setCompleting(userQuestId);
-    const { error } = await completeQuest(userQuestId);
+    const { error, xpResult } = await completeQuest(userQuestId, userId, xp);
 
     if (!error) {
       setQuests((prev) =>
@@ -44,7 +47,16 @@ export function DailyQuestPanel({ userId }: DailyQuestPanelProps) {
             : uq
         )
       );
-      addToast(xp, `Quest complete: ${title}`, icon);
+
+      if (xpResult) {
+        addToast(xp, `Quest complete: ${title}`, icon);
+        onXPAwarded?.(xpResult.newXP);
+
+        if (xpResult.leveledUp) {
+          // Toast টা আগে একটু দেখা যাক, তারপর level-up celebration
+          setTimeout(() => showLevelUp(xpResult.newLevel), 1200);
+        }
+      }
     }
 
     setCompleting(null);

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, Star } from "lucide-react";
 import { useLevelUpStore } from "@/store/levelUpStore";
+import { getLevelColor } from "@/lib/utils/gamification";
 
 function Confetti() {
   const colors = ["#facc15", "#a78bfa", "#34d399", "#60a5fa", "#f472b6"];
@@ -46,6 +47,7 @@ export function LevelUpModal() {
   const { isOpen, newLevel, hide } = useLevelUpStore();
   const [mounted, setMounted] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const accentColor = getLevelColor(newLevel);
 
   useEffect(() => {
     setMounted(true);
@@ -86,7 +88,6 @@ export function LevelUpModal() {
           >
             {mounted && <Confetti />}
 
-            {/* Close button */}
             <button
               ref={closeRef}
               onClick={hide}
@@ -95,38 +96,40 @@ export function LevelUpModal() {
               <X size={16} />
             </button>
 
-            {/* Glow ring */}
             <div className="relative mx-auto mb-6 w-24 h-24 flex items-center justify-center">
               <motion.div
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" as const }}
-                className="absolute inset-0 rounded-full bg-yellow-400/20 blur-xl"
+                className="absolute inset-0 rounded-full blur-xl"
+                style={{ backgroundColor: `${accentColor}33` }}
               />
-              <div className="relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
-                <span className="text-black font-black text-2xl">
-                  {isNaN(newLevel) ? "?" : newLevel}
-                </span>
+              <div
+                className="relative z-10 w-20 h-20 rounded-full flex items-center justify-center shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${accentColor}, #facc15)` }}
+              >
+                <Star size={32} className="text-black" fill="black" />
               </div>
             </div>
 
-            {/* Text */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <p className="text-xs font-semibold text-yellow-400 uppercase tracking-widest mb-1">
+              <p
+                className="text-xs font-semibold uppercase tracking-widest mb-1"
+                style={{ color: accentColor }}
+              >
                 Level Up!
               </p>
               <h2 className="text-2xl font-black text-text-primary mb-2">
-                You reached Level {isNaN(newLevel) ? "?" : newLevel}
+                You&apos;re now a {newLevel}
               </h2>
               <p className="text-sm text-text-muted">
                 Keep exploring, earning XP, and completing quests to unlock new rewards.
               </p>
             </motion.div>
 
-            {/* Stats row */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -147,13 +150,13 @@ export function LevelUpModal() {
               </div>
             </motion.div>
 
-            {/* CTA */}
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
               onClick={hide}
-              className="mt-6 w-full py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-black text-sm font-bold transition-colors"
+              className="mt-6 w-full py-2.5 rounded-xl text-sm font-bold text-black transition-opacity hover:opacity-90"
+              style={{ backgroundColor: accentColor }}
             >
               Continue
             </motion.button>

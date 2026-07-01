@@ -1,15 +1,16 @@
 import { create } from "zustand";
+import type { UserLevel } from "@/lib/utils/gamification";
 
 interface LevelUpStore {
   isOpen: boolean;
-  newLevel: number;
-  show: (level: number) => void;
+  newLevel: UserLevel;
+  show: (level: UserLevel) => void;
   hide: () => void;
 }
 
 export const useLevelUpStore = create<LevelUpStore>((set) => ({
   isOpen: false,
-  newLevel: 1,
+  newLevel: "Novice",
   show: (level) => set({ isOpen: true, newLevel: level }),
   hide: () => set({ isOpen: false }),
 }));
