@@ -5,12 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Search, FileText, ShoppingBag, Users,
-  Loader2, ArrowRight, Eye, Heart, Star, X,
+  Search, FileText, Users,
+  Loader2, ArrowRight, Eye, Heart, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { worlds } from "@/lib/worlds-data";
-import { useCurrencyStore } from "@/store/currencyStore";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -21,23 +20,10 @@ interface SearchArticle {
   excerpt: string | null;
   cover_image: string | null;
   world_id: string;
-  views_count: number;
-  likes_count: number;
+  views: number;
+  likes: number;
   published_at: string | null;
   author: { username: string; display_name: string | null; avatar_url: string | null }[] | null;
-}
-
-interface SearchProduct {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  original_price: number | null;
-  category: string;
-  thumbnail_url: string | null;
-  sales_count: number;
-  rating_avg: number;
-  seller: { username: string; display_name: string | null }[] | null;
 }
 
 interface SearchUser {
@@ -52,11 +38,10 @@ interface SearchUser {
 
 interface SearchResults {
   articles: SearchArticle[];
-  products: SearchProduct[];
   users: SearchUser[];
 }
 
-type Tab = "all" | "articles" | "products" | "people";
+type Tab = "all" | "articles" | "people";
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -124,70 +109,12 @@ function ArticleCard({ article }: { article: SearchArticle }) {
           )}
           <span className="flex items-center gap-1 font-mono text-[11px]">
             <Eye size={10} />
-            {article.views_count}
+            {article.views}
           </span>
           <span className="flex items-center gap-1 font-mono text-[11px]">
             <Heart size={10} />
-            {article.likes_count}
+            {article.likes}
           </span>
-        </div>
-      </div>
-      <ArrowRight size={14} className="text-text-muted shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-    </Link>
-  );
-}
-
-// ─── Product Result Card ─────────────────────────────────────
-
-function ProductCard({ product }: { product: SearchProduct }) {
-  const { format } = useCurrencyStore();
-  const seller = product.seller?.[0];
-
-  return (
-    <Link
-      href={`/marketplace/${product.id}`}
-      className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.03] transition-colors group"
-      style={{ border: "1px solid rgba(255,255,255,0.06)" }}
-    >
-      {product.thumbnail_url ? (
-        <img
-          src={product.thumbnail_url}
-          alt={product.title}
-          className="w-20 h-16 rounded-xl object-cover shrink-0"
-        />
-      ) : (
-        <div
-          className="w-20 h-16 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: "rgba(6,182,212,0.1)" }}
-        >
-          <ShoppingBag size={20} className="text-cyan-400 opacity-40" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <span className="font-mono text-[11px] text-text-muted capitalize">
-          {product.category}
-        </span>
-        <h3 className="text-sm font-bold text-text-primary group-hover:text-cyan-300 transition-colors line-clamp-1 mt-0.5">
-          {product.title}
-        </h3>
-        {product.description && (
-          <p className="text-xs text-text-muted mt-0.5 line-clamp-1">{product.description}</p>
-        )}
-        <div className="flex items-center gap-3 mt-1.5">
-          <span className="font-mono text-sm font-black text-emerald-400">
-            {format(product.price)}
-          </span>
-          {product.rating_avg > 0 && (
-            <span className="flex items-center gap-0.5 font-mono text-[11px] text-amber-400">
-              <Star size={10} fill="currentColor" />
-              {product.rating_avg.toFixed(1)}
-            </span>
-          )}
-          {seller && (
-            <span className="font-mono text-[11px] text-text-muted">
-              by {seller.display_name ?? seller.username}
-            </span>
-          )}
         </div>
       </div>
       <ArrowRight size={14} className="text-text-muted shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -257,20 +184,14 @@ function SearchPageContent() {
     const supabase = createClient();
     const term = q.trim();
 
-    const [articlesRes, productsRes, usersRes] = await Promise.all([
+    const [articlesRes, usersRes] = await Promise.all([
       supabase
         .from("articles")
-        .select("id, title, slug, excerpt, cover_image, world_id, views_count, likes_count, published_at, author:profiles!articles_author_id_fkey(username, display_name, avatar_url)")
+        .select("id, title, slug, excerpt, cover_image, world_id, views, likes, published_at, author:profiles!articles_author_id_fkey(username, display_name, avatar_url)")
         .eq("is_published", true)
         .or(`title.ilike.%${term}%,excerpt.ilike.%${term}%`)
-        .order("views_count", { ascending: false })
+        .order("views", { ascending: false })
         .limit(10),
-
-      supabase
-        .from("products")
-        .select("id, title, description, price, original_price, category, thumbnail_url, sales_count, rating_avg, seller:profiles!products_seller_id_fkey(username, display_name)")
-        .or(`title.ilike.%${term}%,description.ilike.%${term}%`)
-        .limit(8),
 
       supabase
         .from("profiles")
@@ -281,7 +202,6 @@ function SearchPageContent() {
 
     setResults({
       articles: (articlesRes.data ?? []) as unknown as SearchArticle[],
-      products: (productsRes.data ?? []) as unknown as SearchProduct[],
       users: (usersRes.data ?? []) as SearchUser[],
     });
     setLoading(false);
@@ -301,13 +221,11 @@ function SearchPageContent() {
 
   const totalCount =
     (results?.articles.length ?? 0) +
-    (results?.products.length ?? 0) +
     (results?.users.length ?? 0);
 
   const tabs: { key: Tab; label: string; count: number; icon: React.ElementType }[] = [
     { key: "all", label: "All", count: totalCount, icon: Search },
     { key: "articles", label: "Articles", count: results?.articles.length ?? 0, icon: FileText },
-    { key: "products", label: "Products", count: results?.products.length ?? 0, icon: ShoppingBag },
     { key: "people", label: "People", count: results?.users.length ?? 0, icon: Users },
   ];
 
@@ -348,7 +266,7 @@ function SearchPageContent() {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search articles, products, people..."
+                placeholder="Search articles, people..."
                 className="flex-1 bg-transparent text-text-primary placeholder:text-text-muted text-base outline-none"
               />
               {query && (
@@ -471,33 +389,6 @@ function SearchPageContent() {
               </div>
             )}
 
-            {/* Products */}
-            {(activeTab === "all" || activeTab === "products") && results.products.length > 0 && (
-              <div className="mb-8">
-                {activeTab === "all" && (
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <ShoppingBag size={14} className="text-cyan-400" />
-                      <span className="font-mono text-xs font-bold text-text-muted">PRODUCTS</span>
-                    </div>
-                    {results.products.length >= 4 && (
-                      <button
-                        onClick={() => setActiveTab("products")}
-                        className="font-mono text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
-                      >
-                        See all →
-                      </button>
-                    )}
-                  </div>
-                )}
-                <div className="space-y-3">
-                  {(activeTab === "all" ? results.products.slice(0, 2) : results.products).map((p) => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* People */}
             {(activeTab === "all" || activeTab === "people") && results.users.length > 0 && (
               <div className="mb-8">
@@ -544,7 +435,7 @@ function SearchPageContent() {
                 Search across Arthenix
               </p>
               <p className="font-mono text-xs text-text-muted mt-1">
-                Articles &middot; Products &middot; People
+                Articles &middot; People
               </p>
             </div>
 

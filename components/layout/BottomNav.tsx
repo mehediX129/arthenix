@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Globe, ShoppingBag, Users, PenSquare, Search } from "lucide-react";
+import { Home, Globe, Users, PenSquare, Search } from "lucide-react";
 
 const navItems = [
-  { href: "/",            icon: Home,        label: "Home"      },
+  { href: "/",              icon: Home,      label: "Home"      },
   { href: "/worlds/gaming", icon: Globe,     label: "Worlds"    },
-  { href: "/search",      icon: Search,      label: "Search"    },
-  { href: "/write",       icon: PenSquare,   label: "Write"     },
-  { href: "/marketplace", icon: ShoppingBag, label: "Market"    },
-  { href: "/community",   icon: Users,       label: "Community" },
+  { href: "/search",        icon: Search,    label: "Search"    },
+  { href: "/write",         icon: PenSquare, label: "Write"     },
+  { href: "/community",     icon: Users,     label: "Community" },
 ];
 
 export default function BottomNav() {

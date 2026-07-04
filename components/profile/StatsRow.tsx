@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, BookOpen, Flame, Package } from "lucide-react";
+import { Zap, BookOpen, Flame } from "lucide-react";
 import { getLevelColor } from "@/lib/utils/gamification";
 import type { UserLevel } from "@/types/database";
 
@@ -11,8 +11,6 @@ interface StatsRowProps {
   level: UserLevel;
   articlesRead: number;
   streakDays: number;
-  itemsSold?: number;
-  isSeller: boolean;
 }
 
 function AnimatedNumber({ value, duration = 1.2 }: { value: number; duration?: number }) {
@@ -42,8 +40,6 @@ export default function StatsRow({
   level,
   articlesRead,
   streakDays,
-  itemsSold = 0,
-  isSeller,
 }: StatsRowProps) {
   const levelColor = getLevelColor(level);
 
@@ -67,24 +63,10 @@ export default function StatsRow({
       color: "#F59E0B",
       emoji: "🔥",
     },
-    ...(isSeller
-      ? [
-          {
-            icon: Package,
-            label: "Items Sold",
-            value: itemsSold,
-            color: "#10B981",
-          },
-        ]
-      : []),
   ];
 
   return (
-    <div
-      className={`grid gap-4 ${
-        cards.length === 4 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3"
-      }`}
-    >
+    <div className="grid gap-4 grid-cols-3">
       {cards.map((card, i) => (
         <motion.div
           key={card.label}

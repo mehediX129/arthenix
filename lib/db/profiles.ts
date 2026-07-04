@@ -115,22 +115,72 @@ export async function recordUserActivity(
 }
 
 /**
- * Username availability check করে signup form-এর real-time validation এর জন্য।
+ * Username availability check করে signup এবং profile-edit form এর
+ * real-time validation এর জন্য। Edit mode এ excludeUserId পাঠালে
+ * ইউজারের নিজের বর্তমান username কে "taken" ধরবে না।
  */
 export async function isUsernameAvailable(
-  username: string
+  username: string,
+  excludeUserId?: string
 ): Promise<DbResult<boolean>> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("profiles")
     .select("id")
-    .eq("username", username)
-    .maybeSingle();
+    .eq("username", username);
+
+  if (excludeUserId) {
+    query = query.neq("id", excludeUserId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     return { data: null, error: error.message };
   }
 
   return { data: data === null, error: null };
+}
+
+/**
+ * Avatar image Supabase Storage এর "avatars" bucket এ upload করে।
+ * সবসময় {userId}/avatar.{ext} path এ upsert করা হয় — মানে পুরনো
+ * avatar automatically replace হয়ে যায়, storage এ orphan file জমে না।
+ * সফল হলে public URL রিটার্ন করে, যেটা profiles.avatar_url এ সেভ করতে হবে।
+ */
+export async function uploadAvatar(
+  userId: string,
+  file: File
+): Promise<DbResult<string>> {
+  const supabase = createClient();
+
+  // শুধু image file allow করা হচ্ছে, size limit ৫MB
+  if (!file.type.startsWith("image/")) {
+    return { data: null, error: "শুধু image file upload করা যাবে" };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { data: null, error: "Image size ৫MB এর কম হতে হবে" };
+  }
+
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const path = `${userId}/avatar.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, cacheControl: "3600" });
+
+  if (uploadError) {
+    return { data: null, error: uploadError.message };
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("avatars")
+    .getPublicUrl(path);
+
+  // cache-busting query param যোগ করা হচ্ছে, না হলে browser পুরনো
+  // avatar cache করে রাখতে পারে (path একই থাকে upsert এর কারণে)
+  const cacheBustedUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+  return { data: cacheBustedUrl, error: null };
 }

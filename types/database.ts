@@ -8,8 +8,6 @@
 // ENUM TYPES (Postgres enum এর সাথে মিলিয়ে)
 // ------------------------------------------------------------
 export type ComplexityLevel = "quick" | "standard" | "deep";
-export type ProductCategory = "course" | "ebook" | "asset" | "gaming" | "tool";
-export type OrderStatus = "pending" | "completed" | "refunded";
 export type BadgeTier = "common" | "rare" | "epic" | "legendary";
 
 export type UserLevel =
@@ -47,12 +45,14 @@ export interface Profile {
   created_at: string;
   freeze_count: number;
   last_active_date: string | null;
+  twitter_url: string | null;
+  github_url: string | null;
+  linkedin_url: string | null;
+  website_url: string | null;
 }
 
 // insert এর সময় যেসব field optional (DB default আছে)
-export type ProfileInsert = Partial<
-  Omit<Profile, "id" | "username">
-> & {
+export type ProfileInsert = Partial<Omit<Profile, "id" | "username">> & {
   id: string;
   username: string;
 };
@@ -123,98 +123,6 @@ export interface ArticleLike {
 export interface ArticleWithAuthor extends Article {
   author: Pick<Profile, "id" | "username" | "display_name" | "avatar_url" | "level"> | null;
 }
-
-// ------------------------------------------------------------
-// 4. PRODUCTS
-// ------------------------------------------------------------
-export interface Product {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  original_price: number | null;
-  category: ProductCategory;
-  seller_id: string | null;
-  thumbnail_url: string | null;
-  file_url: string | null;
-  sales_count: number;
-  rating_avg: number;
-  rating_count: number;
-  is_active: boolean;
-  flash_sale_end: string | null;
-  tags: string[];
-  created_at: string;
-}
-
-export type ProductInsert = Partial<
-  Omit<Product, "id" | "title" | "price" | "category" | "created_at">
-> & {
-  title: string;
-  price: number;
-  category: ProductCategory;
-};
-
-export type ProductUpdate = Partial<Omit<Product, "id" | "created_at">>;
-
-export interface ProductWithSeller extends Product {
-  seller?: Pick<Profile, "id" | "username" | "display_name" | "avatar_url" | "level"> | null;
-}
-
-export interface ProductFilters {
-  category?: ProductCategory;
-  minPrice?: number;
-  maxPrice?: number;
-  minRating?: number;
-  sellerId?: string;
-  tags?: string[];
-}
-
-// ------------------------------------------------------------
-// 5. ORDERS
-// ------------------------------------------------------------
-export interface Order {
-  id: string;
-  buyer_id: string | null;
-  product_id: string | null;
-  amount_paid: number;
-  stripe_payment_id: string | null;
-  status: OrderStatus;
-  created_at: string;
-}
-
-export type OrderInsert = Partial<
-  Omit<Order, "id" | "amount_paid" | "created_at">
-> & {
-  amount_paid: number;
-};
-
-export interface OrderWithProduct extends Order {
-  product?: Pick<Product, "id" | "title" | "thumbnail_url" | "price"> | null;
-}
-
-// ------------------------------------------------------------
-// 6. REVIEWS
-// ------------------------------------------------------------
-export interface Review {
-  id: string;
-  product_id: string | null;
-  reviewer_id: string | null;
-  rating: number; // 1-5
-  comment: string | null;
-  helpful_count: number;
-  created_at: string;
-}
-
-export type ReviewInsert = Partial<
-  Omit<Review, "id" | "rating" | "created_at">
-> & {
-  rating: number;
-};
-
-export interface ReviewWithReviewer extends Review {
-  reviewer?: Pick<Profile, "id" | "username" | "avatar_url"> | null;
-}
-
 // ------------------------------------------------------------
 // 7. BADGES
 // ------------------------------------------------------------
@@ -253,23 +161,6 @@ export interface Bookmark {
 }
 
 // ------------------------------------------------------------
-// WISHLISTS (Phase 4 — Product wishlist, bookmarks থেকে পৃথক)
-// ------------------------------------------------------------
-export interface Wishlist {
-  id: string;
-  user_id: string | null;
-  product_id: string | null;
-  created_at: string;
-}
-
-export interface WishlistWithProduct extends Wishlist {
-  product?: Pick<
-    Product,
-    "id" | "title" | "thumbnail_url" | "price" | "original_price"
-  > | null;
-}
-
-// ------------------------------------------------------------
 // 10. COMMENTS
 // ------------------------------------------------------------
 export interface Comment {
@@ -303,15 +194,6 @@ export interface WorldAffinity {
   affinity_score: number;
 }
 
-export interface SearchResult {
-  result_type: "article" | "product";
-  id: string;
-  title: string;
-  description: string | null;
-  thumbnail: string | null;
-  rank: number;
-}
-
 // ------------------------------------------------------------
 // GENERIC HELPER TYPES
 // ------------------------------------------------------------
@@ -326,21 +208,6 @@ export interface PaginatedResult<T> {
 export interface DbResult<T> {
   data: T | null;
   error: string | null;
-}
-
-// ------------------------------------------------------------
-// PRICE HISTORY (Phase 4C — Product price tracking)
-// ------------------------------------------------------------
-export interface PriceHistory {
-  id: string;
-  product_id: string | null;
-  price: number;
-  recorded_at: string;
-}
-
-export interface PriceHistoryPoint {
-  date: string;
-  price: number;
 }
 
 // ------------------------------------------------------------
@@ -456,18 +323,6 @@ export interface ArticleSearchResult {
   likes: number;
   rank: number;
 }
-
-export interface ProductSearchResult {
-  id: string;
-  title: string;
-  description: string | null;
-  thumbnail_url: string | null;
-  price: number;
-  category: string;
-  rating_avg: number;
-  rank: number;
-}
-
 export interface UserSearchResult {
   id: string;
   username: string;
@@ -479,7 +334,6 @@ export interface UserSearchResult {
 
 export interface SearchResults {
   articles: ArticleSearchResult[];
-  products: ProductSearchResult[];
   users: UserSearchResult[];
 }
 
@@ -516,38 +370,5 @@ export interface Follow {
   id: string;
   follower_id: string;
   following_id: string;
-  created_at: string;
-}
-
-// ─── Seller Dashboard ────────────────────────────────────────
-export interface SellerStats {
-  total_products: number;
-  active_products: number;
-  total_sales: number;
-  total_revenue: number;
-  this_month: number;
-  last_month: number;
-}
-
-export interface SellerProduct {
-  id: string;
-  title: string;
-  price: number;
-  original_price: number | null;
-  category: string;
-  is_active: boolean;
-  sales_count: number;
-  rating_avg: number;
-  thumbnail_url: string | null;
-  created_at: string;
-}
-
-export interface SellerOrder {
-  id: string;
-  product_id: string;
-  product_title: string;
-  buyer_username: string;
-  amount: number;
-  status: string;
   created_at: string;
 }

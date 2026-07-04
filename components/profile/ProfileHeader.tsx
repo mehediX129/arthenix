@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Calendar, ShieldCheck, Edit } from "lucide-react";
+import { MapPin, Calendar, Edit } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
 import LevelProgressBar from "./LevelProgressBar";
 import FollowButton from "./FollowButton";
@@ -58,12 +58,6 @@ export default function ProfileHeader({
                   <h1 className="font-display font-black text-2xl md:text-3xl text-text-primary">
                     {profile.display_name ?? profile.username}
                   </h1>
-                  {profile.is_seller && (
-                    <span className="flex items-center gap-1 rounded-full bg-[#06B6D4]/15 px-2.5 py-1 text-[11px] font-semibold text-[#06B6D4]">
-                      <ShieldCheck size={12} />
-                      Verified Seller
-                    </span>
-                  )}
                 </div>
                 <p className="text-text-muted text-sm mt-0.5">
                   @{profile.username}
@@ -72,8 +66,7 @@ export default function ProfileHeader({
 
               {/* Action button */}
               {isOwnProfile ? (
-                
-                  <a href="/profile/edit"
+                <a href="/profile/edit"
                   className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-secondary-bg px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
                 >
                   <Edit size={14} />

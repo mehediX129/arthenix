@@ -7,7 +7,6 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import StatsRow from "@/components/profile/StatsRow";
 import WorldAffinityChart from "@/components/profile/WorldAffinityChart";
 import BadgesGrid from "@/components/profile/BadgesGrid";
-import ActivityFeed from "@/components/profile/ActivityFeed";
 import { DailyQuestPanel } from "@/components/gamification/DailyQuestPanel";
 import {
   getProfileByUsername,
@@ -118,7 +117,6 @@ export default function ProfilePage() {
           level={profile.level}
           articlesRead={articlesRead}
           streakDays={profile.streak_days}
-          isSeller={profile.is_seller}
         />
 
         {isOwnProfile && (
@@ -143,7 +141,6 @@ export default function ProfilePage() {
         </div>
         <ActivityHeatmap userId={profile.id} />
 
-        <ActivityFeed userId={profile.id} />
       </div>
     </div>
   );

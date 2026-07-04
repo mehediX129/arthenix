@@ -9,7 +9,6 @@ import {
   Clock,
   ArrowRight,
   FileText,
-  ShoppingBag,
   Loader2,
 } from "lucide-react";
 import { useSearchStore } from "@/store/searchStore";
@@ -42,7 +41,6 @@ export default function SearchModal() {
   const inputRef = useRef<HTMLInputElement>(null);
   const debouncedQuery = useDebounce(query, 300);
 
-  // Focus input on open, reset state
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 80);
@@ -50,7 +48,6 @@ export default function SearchModal() {
     }
   }, [isOpen]);
 
-  // Global keyboard shortcut: Ctrl+K / Cmd+K / Escape
   useEffect(() => {
     function handleKeydown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -65,7 +62,6 @@ export default function SearchModal() {
     return () => window.removeEventListener("keydown", handleKeydown);
   }, [isOpen, open, close]);
 
-  // Run search when debounced query changes
   useEffect(() => {
     if (!debouncedQuery.trim() || debouncedQuery.trim().length < 2) {
       setResults(null);
@@ -89,9 +85,7 @@ export default function SearchModal() {
 
   const hasResults =
     results &&
-    (results.articles.length > 0 ||
-      results.products.length > 0 ||
-      results.users.length > 0);
+    (results.articles.length > 0 || results.users.length > 0);
 
   const showEmpty =
     !loading &&
@@ -103,7 +97,6 @@ export default function SearchModal() {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -113,7 +106,6 @@ export default function SearchModal() {
             style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: -16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -130,7 +122,6 @@ export default function SearchModal() {
                   "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.1)",
               }}
             >
-              {/* Search input row */}
               <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5">
                 {loading ? (
                   <Loader2
@@ -144,7 +135,7 @@ export default function SearchModal() {
                   ref={inputRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search articles, products, people..."
+                  placeholder="Search articles, people..."
                   className="flex-1 bg-transparent text-text-primary placeholder-text-muted font-body text-base outline-none"
                 />
                 {query && (
@@ -160,10 +151,7 @@ export default function SearchModal() {
                 </kbd>
               </div>
 
-              {/* Body */}
               <div className="max-h-[60vh] overflow-y-auto">
-
-                {/* Recent searches — shown when input is empty */}
                 {!query && recentSearches.length > 0 && (
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -203,7 +191,6 @@ export default function SearchModal() {
                   </div>
                 )}
 
-                {/* Empty state — no query, no recent searches */}
                 {!query && recentSearches.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-14 gap-3">
                     <div
@@ -219,12 +206,11 @@ export default function SearchModal() {
                       Search across Arthenix
                     </p>
                     <p className="text-text-muted font-mono text-xs opacity-60">
-                      Articles &middot; Products &middot; People
+                      Articles &middot; People
                     </p>
                   </div>
                 )}
 
-                {/* No results found */}
                 {showEmpty && (
                   <div className="flex flex-col items-center justify-center py-12 gap-2">
                     <p className="text-text-secondary font-body text-sm">
@@ -236,11 +222,8 @@ export default function SearchModal() {
                   </div>
                 )}
 
-                {/* Search results */}
                 {hasResults && (
                   <div className="p-3 space-y-1">
-
-                    {/* Articles section */}
                     {results.articles.length > 0 && (
                       <div>
                         <p className="font-mono text-xs text-text-muted px-3 py-2">
@@ -278,43 +261,6 @@ export default function SearchModal() {
                       </div>
                     )}
 
-                    {/* Products section */}
-                    {results.products.length > 0 && (
-                      <div>
-                        <p className="font-mono text-xs text-text-muted px-3 py-2">
-                          PRODUCTS
-                        </p>
-                        {results.products.map((product) => (
-                          <Link
-                            key={product.id}
-                            href={`/marketplace/${product.slug}`}
-                            onClick={() => handleSelectResult(product.title)}
-                            className="flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
-                          >
-                            <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                              style={{ background: "rgba(6,182,212,0.15)" }}
-                            >
-                              <ShoppingBag size={14} className="text-cyan-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-text-primary truncate group-hover:text-cyan-300 transition-colors">
-                                {product.title}
-                              </p>
-                              <p className="text-xs text-text-muted mt-0.5">
-                                Tk {product.price} &middot; {product.category}
-                              </p>
-                            </div>
-                            <ArrowRight
-                              size={14}
-                              className="text-text-muted shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            />
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Users section */}
                     {results.users.length > 0 && (
                       <div>
                         <p className="font-mono text-xs text-text-muted px-3 py-2">
@@ -359,7 +305,6 @@ export default function SearchModal() {
                 )}
               </div>
 
-              {/* Footer */}
               <div className="flex items-center justify-between px-5 py-3 border-t border-white/5">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5 font-mono text-xs text-text-muted">

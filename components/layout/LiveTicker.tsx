@@ -4,7 +4,7 @@ import React, { useState } from "react";
 
 const tickerItems = [
   "🔥 Trending: The Simulation Hypothesis explained",
-  "⚡ New Drop: Cyberpunk UI Kit — 40% off",
+  "⚡ New Article: Understanding Neural Networks",
   "🎮 Gaming: Most broken builds in 2025",
   "🧠 Daily Challenge: The Monty Hall Problem",
   "⚔️ Anime: One Piece chapter 1120 breakdown",
@@ -43,7 +43,6 @@ export default function LiveTicker() {
           height: "36px",
         }}
       >
-        {/* LIVE badge */}
         <div
           className="flex-shrink-0 flex items-center gap-2 px-4 h-full"
           style={{
@@ -63,7 +62,6 @@ export default function LiveTicker() {
           </span>
         </div>
 
-        {/* Scrolling text */}
         <div
           className="flex-1 overflow-hidden"
           onMouseEnter={() => setPaused(true)}
@@ -72,7 +70,6 @@ export default function LiveTicker() {
           <div
             className={`ticker-track${paused ? " paused" : ""} flex whitespace-nowrap`}
           >
-            {/* Duplicate for seamless loop */}
             {[0, 1].map((copy) => (
               <span
                 key={copy}
@@ -85,7 +82,6 @@ export default function LiveTicker() {
           </div>
         </div>
 
-        {/* Right fade */}
         <div
           className="absolute right-0 top-0 bottom-0 w-16 pointer-events-none"
           style={{

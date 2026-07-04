@@ -12,7 +12,6 @@ import {
   ChevronDown,
   LogOut,
   User as UserIcon,
-  ShoppingBag,
   BarChart2,
 } from "lucide-react";
 import { worlds } from "@/lib/worlds-data";
@@ -23,14 +22,12 @@ import Avatar from "@/components/ui/Avatar";
 import { useSearchStore } from "@/store/searchStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
-import { useCurrencyStore } from "@/store/currencyStore";
 
 export default function Navbar() {
   const router = useRouter();
   const { user, loading } = useUser();
   const clearUser = useUserStore((state) => state.clearUser);
   const { open: openSearch } = useSearchStore();
-  const { currency, toggle: toggleCurrency } = useCurrencyStore();
   const { unreadCount, loadUnreadCount } = useNotificationStore();
   const [notifOpen, setNotifOpen] = useState(false);
 
@@ -73,7 +70,6 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
             <Link href="/" className="flex items-center">
               <span
                 className="font-display font-black text-2xl"
@@ -88,7 +84,6 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* Center — Worlds button */}
             <div className="hidden md:flex items-center gap-8">
               <div className="relative">
                 <button
@@ -157,12 +152,6 @@ export default function Navbar() {
               </div>
 
               <Link
-                href="/marketplace"
-                className="text-text-secondary hover:text-text-primary transition-colors duration-200 font-body font-medium"
-              >
-                Marketplace
-              </Link>
-              <Link
                 href="/community"
                 className="text-text-secondary hover:text-text-primary transition-colors duration-200 font-body font-medium"
               >
@@ -170,20 +159,7 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Right side */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={toggleCurrency}
-                title="Toggle currency"
-                className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-mono text-xs font-bold transition-colors"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {currency === "USD" ? "$ USD" : "৳ BDT"}
-              </button>
               <button
                 onClick={openSearch}
                 title="Search (Ctrl+K)"
@@ -221,7 +197,6 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Auth state — desktop */}
               <div className="hidden md:block">
                 {loading ? (
                   <div className="w-9 h-9 rounded-full bg-white/5 animate-pulse" />
@@ -267,7 +242,7 @@ export default function Navbar() {
                             </p>
                           </div>
 
-                     <Link
+                          <Link
                             href="/dashboard"
                             onClick={() => setAccountMenuOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
@@ -275,28 +250,14 @@ export default function Navbar() {
                             <BarChart2 size={15} />
                             Dashboard
                           </Link>
-                          <Link
-                            href="/seller"
-                            onClick={() => setAccountMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-                          >
-                            <ShoppingBag size={15} />
-                            Seller Dashboard
-                          </Link>
 
                           <Link
                             href={`/profile/${user.username}`}
+                            onClick={() => setAccountMenuOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
                           >
                             <UserIcon size={15} />
                             My Profile
-                          </Link>
-                          <Link
-                            href="/profile/purchases"
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
-                          >
-                            <ShoppingBag size={15} />
-                            My Purchases
                           </Link>
 
                           <div className="border-t border-white/5 mt-1 pt-1">
@@ -326,7 +287,6 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Mobile hamburger */}
               <button
                 onClick={() => setMobileOpen(true)}
                 className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary"
@@ -338,7 +298,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -382,7 +341,6 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Mobile — logged in user card */}
               {user && (
                 <div className="flex items-center gap-3 p-4 border-b border-white/5">
                   <Avatar
@@ -431,23 +389,16 @@ export default function Navbar() {
 
                 <div className="mt-6 flex flex-col gap-2">
                   <Link
-                    href="/marketplace"
-                    onClick={() => setMobileOpen(false)}
-                    className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
-                  >
-                    🛒 Marketplace
-                  </Link>
-                  <Link
                     href="/community"
                     onClick={() => setMobileOpen(false)}
                     className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
                   >
-                    💬 Community 
+                    💬 Community
                   </Link>
                   <Link
-                  href="/write"
-                  onClick={() => setMobileOpen(false)}
-                  className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
+                    href="/write"
+                    onClick={() => setMobileOpen(false)}
+                    className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
                   >
                     ✍️ Write
                   </Link>
@@ -467,20 +418,6 @@ export default function Navbar() {
                         className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
                       >
                         📊 Dashboard
-                      </Link>
-                      <Link
-                        href="/seller"
-                        onClick={() => setMobileOpen(false)}
-                        className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
-                      >
-                        🏪 Seller Dashboard
-                      </Link>
-                      <Link
-                        href="/profile/purchases"
-                        onClick={() => setMobileOpen(false)}
-                        className="p-3 rounded-xl text-text-secondary font-body font-medium hover:text-text-primary hover:bg-white hover:bg-opacity-5 transition-all"
-                      >
-                        🛍️ My Purchases
                       </Link>
                     </>
                   )}
