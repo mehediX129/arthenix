@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileHero from "@/components/profile/ProfileHero";
 import StatsRow from "@/components/profile/StatsRow";
 import WorldAffinityChart from "@/components/profile/WorldAffinityChart";
 import BadgesGrid from "@/components/profile/BadgesGrid";
@@ -106,7 +106,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-primary-bg px-4 py-8 md:px-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        <ProfileHeader
+        <ProfileHero
           profile={profile}
           isOwnProfile={isOwnProfile}
           selectedWorldNames={selectedWorldNames}

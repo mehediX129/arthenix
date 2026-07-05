@@ -21,6 +21,7 @@ import { getArticlesByWorld } from "@/lib/db/articles";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import { worlds } from "@/lib/worlds-data";
+import { recordWorldVisit } from "@/lib/db/quests";
 import type { ArticleWithAuthor } from "@/types/database";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -157,6 +158,12 @@ export default function WorldPage() {
 
     load();
   }, [worldId]);
+  // "Explorer" quest (visit 2 different worlds) এর জন্য — এই world
+  // visit হয়েছে বলে log করা, শুধু logged-in user এর জন্য
+  useEffect(() => {
+    if (!worldId || !user) return;
+    recordWorldVisit(user.id, worldId);
+  }, [worldId, user]);
 
   if (!world) {
     return (

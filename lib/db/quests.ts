@@ -1,8 +1,16 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Quest, UserQuestWithQuest } from "@/types/database";
-import { awardXP, type AwardXPResult } from "@/lib/db/gamification";
 
-// Fetch today's assigned quests for a user (creates them if not exists)
+export interface CompletedQuestInfo {
+  userQuestId: string;
+  title: string;
+  icon: string;
+  xpReward: number;
+  newTotalXP: number;
+  newLevel: string;
+}
+
+// আজকের জন্য assign করা quest fetch করে (না থাকলে নতুন করে assign করে দেয়)
 export async function getTodayQuests(userId: string): Promise<{
   data: UserQuestWithQuest[] | null;
   error: string | null;
@@ -10,7 +18,6 @@ export async function getTodayQuests(userId: string): Promise<{
   const supabase = createClient();
   const today = new Date().toISOString().split("T")[0];
 
-  // Check if quests already assigned today
   const { data: existing, error: fetchError } = await supabase
     .from("user_quests")
     .select("*, quest:quests(*)")
@@ -19,21 +26,20 @@ export async function getTodayQuests(userId: string): Promise<{
 
   if (fetchError) return { data: null, error: fetchError.message };
 
-  // If already assigned, return them
   if (existing && existing.length > 0) {
     return { data: existing as UserQuestWithQuest[], error: null };
   }
 
-  // Otherwise pick 3 random active quests and assign
   const { data: allQuests, error: questError } = await supabase
     .from("quests")
     .select("*")
     .eq("is_active", true)
     .eq("quest_type", "daily");
 
-  if (questError || !allQuests) return { data: null, error: questError?.message ?? "No quests found" };
+  if (questError || !allQuests) {
+    return { data: null, error: questError?.message ?? "No quests found" };
+  }
 
-  // Shuffle and pick 3
   const shuffled = [...allQuests].sort(() => Math.random() - 0.5);
   const picked: Quest[] = shuffled.slice(0, 3);
 
@@ -51,7 +57,6 @@ export async function getTodayQuests(userId: string): Promise<{
 
   if (insertError) return { data: null, error: insertError.message };
 
-  // Re-fetch with quest details
   const { data: fresh, error: refetchError } = await supabase
     .from("user_quests")
     .select("*, quest:quests(*)")
@@ -63,58 +68,58 @@ export async function getTodayQuests(userId: string): Promise<{
   return { data: fresh as UserQuestWithQuest[], error: null };
 }
 
-// Update quest progress
-export async function updateQuestProgress(
-  userQuestId: string,
-  newProgress: number,
-  targetCount: number
-): Promise<{ error: string | null }> {
-  const supabase = createClient();
-  const completed = newProgress >= targetCount;
-
-  const { error } = await supabase
-    .from("user_quests")
-    .update({
-      progress: newProgress,
-      completed,
-      completed_at: completed ? new Date().toISOString() : null,
-    })
-    .eq("id", userQuestId);
-
-  return { error: error?.message ?? null };
-}
-
 /**
- * Quest সম্পূর্ণ করে এবং real XP award করে। `.eq("completed", false)`
- * গার্ড থাকায় একই quest দুইবার complete করে double XP পাওয়া যায় না।
+ * মূল automation — আজকের সব incomplete quest এর real progress
+ * (like/read/publish/world-visit থেকে) সার্ভার-সাইডে recalculate করে,
+ * target পূরণ হয়ে থাকলে নিজে থেকেই complete করে XP দিয়ে দেয়।
+ * নতুন completed quest এর তালিকা রিটার্ন করে, যাতে UI toast দেখাতে পারে।
  */
-export async function completeQuest(
-  userQuestId: string,
-  userId: string,
-  xpReward: number
-): Promise<{ error: string | null; xpResult: AwardXPResult | null }> {
+export async function recalculateQuestProgress(
+  userId: string
+): Promise<{ data: CompletedQuestInfo[]; error: string | null }> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("user_quests")
-    .update({
-      completed: true,
-      completed_at: new Date().toISOString(),
-      progress: 999,
-    })
-    .eq("id", userQuestId)
-    .eq("completed", false)
-    .select("id");
+  const { data, error } = await supabase.rpc(
+    "recalculate_daily_quest_progress",
+    { p_user_id: userId }
+  );
 
   if (error) {
-    return { error: error.message, xpResult: null };
+    return { data: [], error: error.message };
   }
 
-  // data.length === 0 মানে quest টা আগেই complete করা ছিল — XP আবার দেওয়া হবে না
-  if (!data || data.length === 0) {
-    return { error: null, xpResult: null };
-  }
+  const completed: CompletedQuestInfo[] = (data ?? []).map(
+    (row: {
+      user_quest_id: string;
+      quest_title: string;
+      quest_icon: string;
+      xp_reward: number;
+      new_total_xp: number;
+      new_level: string;
+    }) => ({
+      userQuestId: row.user_quest_id,
+      title: row.quest_title,
+      icon: row.quest_icon,
+      xpReward: row.xp_reward,
+      newTotalXP: row.new_total_xp,
+      newLevel: row.new_level,
+    })
+  );
 
-  const xpResult = await awardXP(userId, xpReward);
-  return { error: null, xpResult };
+  return { data: completed, error: null };
+}
+
+// World page-এ ঢুকলে call হবে — "Explorer" quest (visit_world) এর জন্য
+export async function recordWorldVisit(
+  userId: string,
+  worldId: string
+): Promise<{ error: string | null }> {
+  const supabase = createClient();
+
+  const { error } = await supabase.rpc("record_world_visit", {
+    p_user_id: userId,
+    p_world_id: worldId,
+  });
+
+  return { error: error?.message ?? null };
 }
