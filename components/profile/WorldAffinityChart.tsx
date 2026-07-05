@@ -39,12 +39,12 @@ export default function WorldAffinityChart({
         World Affinity
       </h3>
       <p className="text-text-muted text-xs mb-4">
-        কোন world-এ সবচেয়ে বেশি সময় কাটাচ্ছো
+       Where you spend the most time exploring
       </p>
 
       {!hasAnyEngagement && (
         <p className="text-text-muted text-xs mb-3 italic">
-          এখনো কোনো world bookmark করা হয়নি — explore শুরু করো!
+          No worlds bookmarked yet — start exploring!
         </p>
       )}
 

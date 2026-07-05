@@ -49,6 +49,7 @@ export interface Profile {
   github_url: string | null;
   linkedin_url: string | null;
   website_url: string | null;
+  pronouns: string | null;
 }
 
 // insert এর সময় যেসব field optional (DB default আছে)

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -8,15 +8,16 @@ import {
   Loader2,
   Check,
   X as XIcon,
-  MapPin,
   Globe,
   ArrowLeft,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import { updateProfile, uploadAvatar, isUsernameAvailable } from "@/lib/db/profiles";
 import { useUserStore } from "@/lib/store/user-store";
 import { getInitials, getLevelColor } from "@/lib/utils/gamification";
-import type { Profile } from "@/types/database";
+import LocationSelect from "@/components/ui/LocationSelect";
+import type { Profile, ProfileVisibility } from "@/types/database";
 
 interface ProfileEditFormProps {
   profile: Profile;
@@ -44,8 +45,12 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
 
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [username, setUsername] = useState(profile.username);
+  const [pronouns, setPronouns] = useState(profile.pronouns ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
   const [location, setLocation] = useState(profile.location ?? "");
+  const [visibility, setVisibility] = useState<ProfileVisibility>(
+    profile.profile_visibility ?? "public"
+  );
   const [twitterUrl, setTwitterUrl] = useState(profile.twitter_url ?? "");
   const [githubUrl, setGithubUrl] = useState(profile.github_url ?? "");
   const [linkedinUrl, setLinkedinUrl] = useState(profile.linkedin_url ?? "");
@@ -89,14 +94,28 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     };
   }, [debouncedUsername, profile.id, profile.username]);
 
+  // ── Profile completeness meter (gamified nudge to fill everything in) ──
+  const completeness = useMemo(() => {
+    const fields = [
+      !!avatarPreview,
+      !!displayName.trim(),
+      !!bio.trim(),
+      !!location.trim(),
+      !!pronouns.trim(),
+      !!(twitterUrl || githubUrl || linkedinUrl || websiteUrl),
+    ];
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
+  }, [avatarPreview, displayName, bio, location, pronouns, twitterUrl, githubUrl, linkedinUrl, websiteUrl]);
+
   // ── Avatar file select ───────────────────────────────────────
   const handleAvatarSelect = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
-      setError("শুধু image file বেছে নাও");
+      setError("Please choose an image file");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image size ৫MB এর কম হতে হবে");
+      setError("Image must be under 5MB");
       return;
     }
     setError(null);
@@ -140,8 +159,10 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     const { data: updated, error: updateErr } = await updateProfile(profile.id, {
       display_name: displayName.trim() || null,
       username: finalUsername,
+      pronouns: pronouns.trim() || null,
       bio: bio.trim() || null,
       location: location.trim() || null,
+      profile_visibility: visibility,
       avatar_url: avatarUrl,
       twitter_url: twitterUrl.trim() || null,
       github_url: githubUrl.trim() || null,
@@ -150,12 +171,11 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     });
 
     if (updateErr || !updated) {
-      setError(updateErr ?? "কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করো");
+      setError(updateErr ?? "Something went wrong. Please try again.");
       setSaving(false);
       return;
     }
 
-    // Navbar/global store-এ avatar+username সাথে সাথে আপডেট হয়ে যাক
     if (storeUser) {
       setUser({ ...storeUser, username: finalUsername, avatar_url: avatarUrl });
     }
@@ -173,7 +193,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
     <div className="min-h-screen bg-primary-bg px-4 py-8 md:px-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => router.back()}
             className="flex items-center justify-center w-9 h-9 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
@@ -185,15 +205,102 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
               Edit Profile
             </h1>
             <p className="text-text-muted text-xs font-mono mt-0.5">
-              পরিবর্তন সাথে সাথেই সবার কাছে visible হবে
+              Changes appear instantly on your public profile
             </p>
           </div>
         </div>
 
-        {/* Avatar card */}
+        {/* Completeness meter */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-white/10 bg-card-bg/60 backdrop-blur-sm p-4 mb-4"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="flex items-center gap-1.5 font-mono text-xs text-text-muted">
+              <Sparkles size={13} className="text-amber-400" />
+              PROFILE STRENGTH
+            </span>
+            <span
+              className="font-display font-black text-sm"
+              style={{ color: completeness === 100 ? "#10B981" : levelColor }}
+            >
+              {completeness}%
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{
+                background:
+                  completeness === 100
+                    ? "linear-gradient(90deg, #10B981, #06B6D4)"
+                    : "linear-gradient(90deg, #7C3AED, #06B6D4)",
+              }}
+              initial={{ width: 0 }}
+              animate={{ width: `${completeness}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
+          {completeness < 100 && (
+            <p className="text-text-muted text-[11px] mt-2">
+              Complete profiles get noticed more — fill in bio, location, and social links.
+            </p>
+          )}
+        </motion.div>
+
+        {/* Live preview card */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.03 }}
+          className="rounded-2xl border border-white/10 bg-card-bg/60 backdrop-blur-sm p-5 mb-4 flex items-center gap-4"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(124,58,237,0.06), rgba(6,182,212,0.06))",
+          }}
+        >
+          <div
+            className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center border-2 font-display font-bold text-lg text-white bg-gradient-to-br from-[#7C3AED] to-[#06B6D4] shrink-0"
+            style={{ borderColor: `${levelColor}55` }}
+          >
+            {avatarPreview ? (
+              <Image
+                src={avatarPreview}
+                alt="Preview"
+                width={56}
+                height={56}
+                unoptimized={avatarPreview.startsWith("blob:")}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              getInitials(displayName || profile.username)
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-display font-bold text-text-primary truncate">
+              {displayName || profile.username}
+              {pronouns && (
+                <span className="text-text-muted font-body font-normal text-xs ml-2">
+                  ({pronouns})
+                </span>
+              )}
+            </p>
+            <p className="text-text-muted text-xs truncate">
+              @{username || profile.username}
+              {location && <> &middot; {location}</>}
+            </p>
+          </div>
+          <span className="font-mono text-[10px] text-text-muted shrink-0 px-2 py-1 rounded-md bg-white/5">
+            PREVIEW
+          </span>
+        </motion.div>
+
+        {/* Avatar upload card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
           className="rounded-2xl border border-white/10 bg-card-bg/60 backdrop-blur-sm p-6 mb-4 flex flex-col items-center"
         >
           <div
@@ -234,7 +341,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
             }}
           />
           <p className="font-mono text-xs text-text-muted mt-3">
-            ক্লিক করো বা drag-drop করো (max 5MB)
+            Click or drag &amp; drop to upload (max 5MB)
           </p>
         </motion.div>
 
@@ -242,21 +349,57 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+          transition={{ delay: 0.08 }}
           className="rounded-2xl border border-white/10 bg-card-bg/60 backdrop-blur-sm p-6 mb-4 space-y-5"
         >
-          {/* Display name */}
-          <div>
-            <label className="block font-mono text-xs text-text-muted mb-1.5">
-              DISPLAY NAME
-            </label>
-            <input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              maxLength={40}
-              placeholder="তোমার নাম"
-              className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-text-primary placeholder:text-text-muted outline-none focus:border-violet-500/50 transition-colors"
-            />
+          <p className="font-mono text-xs text-text-muted mb-1">BASIC INFO</p>
+
+          {/* Display name + Pronouns row */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block font-mono text-xs text-text-muted mb-1.5">
+                DISPLAY NAME
+              </label>
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                maxLength={40}
+                placeholder="Your name"
+                className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-text-primary placeholder:text-text-muted outline-none focus:border-violet-500/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block font-mono text-xs text-text-muted mb-1.5">
+                PRONOUNS
+              </label>
+              <select
+                value={pronouns}
+                onChange={(e) => setPronouns(e.target.value)}
+                className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-text-primary outline-none focus:border-violet-500/50 transition-colors text-sm appearance-none cursor-pointer"
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                }}
+              >
+                <option value="" className="bg-[#12121F]">
+                  Prefer not to say
+                </option>
+                <option value="he/him" className="bg-[#12121F]">
+                  he/him
+                </option>
+                <option value="she/her" className="bg-[#12121F]">
+                  she/her
+                </option>
+                <option value="they/them" className="bg-[#12121F]">
+                  they/them
+                </option>
+                <option value="other" className="bg-[#12121F]">
+                  Other
+                </option>
+              </select>
+            </div>
           </div>
 
           {/* Username */}
@@ -296,15 +439,15 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
               </span>
             </div>
             {usernameStatus === "taken" && (
-              <p className="text-xs text-red-400 mt-1.5">এই username আগে থেকেই নেওয়া আছে</p>
+              <p className="text-xs text-red-400 mt-1.5">This username is already taken</p>
             )}
             {usernameStatus === "invalid" && (
               <p className="text-xs text-red-400 mt-1.5">
-                শুধু lowercase letter, number, underscore — ৩-২০ character
+                Lowercase letters, numbers, underscore only — 3 to 20 characters
               </p>
             )}
             {usernameStatus === "available" && (
-              <p className="text-xs text-emerald-400 mt-1.5">এই username পাওয়া যাচ্ছে ✓</p>
+              <p className="text-xs text-emerald-400 mt-1.5">Username is available ✓</p>
             )}
           </div>
 
@@ -325,29 +468,17 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
               value={bio}
               onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
               rows={3}
-              placeholder="নিজের সম্পর্কে কিছু লেখো..."
+              placeholder="Tell people a bit about yourself..."
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-text-primary placeholder:text-text-muted outline-none focus:border-violet-500/50 transition-colors resize-none"
             />
           </div>
 
-          {/* Location */}
+          {/* Location — searchable dropdown, not free text */}
           <div>
             <label className="block font-mono text-xs text-text-muted mb-1.5">
               LOCATION
             </label>
-            <div className="relative">
-              <MapPin
-                size={15}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
-              />
-              <input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                maxLength={60}
-                placeholder="Dhaka, Bangladesh"
-                className="w-full rounded-xl bg-white/5 border border-white/10 pl-10 pr-4 py-2.5 text-text-primary placeholder:text-text-muted outline-none focus:border-violet-500/50 transition-colors"
-              />
-            </div>
+            <LocationSelect value={location} onChange={setLocation} />
           </div>
         </motion.div>
 
@@ -355,8 +486,8 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-white/10 bg-card-bg/60 backdrop-blur-sm p-6 mb-6 space-y-4"
+          transition={{ delay: 0.11 }}
+          className="rounded-2xl border border-white/10 bg-card-bg/60 backdrop-blur-sm p-6 mb-4 space-y-4"
         >
           <p className="font-mono text-xs text-text-muted mb-1">SOCIAL LINKS</p>
 
@@ -398,6 +529,44 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
           />
         </motion.div>
 
+        {/* Privacy card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.14 }}
+          className="rounded-2xl border border-white/10 bg-card-bg/60 backdrop-blur-sm p-6 mb-6"
+        >
+          <p className="font-mono text-xs text-text-muted mb-3">PROFILE VISIBILITY</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setVisibility("public")}
+              className="flex flex-col items-start gap-1 p-3.5 rounded-xl border text-left transition-colors"
+              style={
+                visibility === "public"
+                  ? { borderColor: "rgba(124,58,237,0.5)", background: "rgba(124,58,237,0.1)" }
+                  : { borderColor: "rgba(255,255,255,0.1)", background: "transparent" }
+              }
+            >
+              <span className="font-display font-bold text-sm text-text-primary">Public</span>
+              <span className="text-text-muted text-[11px]">Anyone can view your profile</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setVisibility("private")}
+              className="flex flex-col items-start gap-1 p-3.5 rounded-xl border text-left transition-colors"
+              style={
+                visibility === "private"
+                  ? { borderColor: "rgba(124,58,237,0.5)", background: "rgba(124,58,237,0.1)" }
+                  : { borderColor: "rgba(255,255,255,0.1)", background: "transparent" }
+              }
+            >
+              <span className="font-display font-bold text-sm text-text-primary">Private</span>
+              <span className="text-text-muted text-[11px]">Only you can view your profile</span>
+            </button>
+          </div>
+        </motion.div>
+
         {/* Error / success message */}
         {error && (
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 mb-4 text-sm text-red-300">
@@ -406,7 +575,7 @@ export default function ProfileEditForm({ profile }: ProfileEditFormProps) {
         )}
         {success && (
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 mb-4 text-sm text-emerald-300 flex items-center gap-2">
-            <Check size={15} /> Profile আপডেট হয়ে গেছে!
+            <Check size={15} /> Profile updated successfully!
           </div>
         )}
 
