@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Arthenix — The Universe of Human Knowledge
 
-## Getting Started
+Arthenix is a knowledge-sharing and community platform organized around 12
+themed "worlds" (Gaming, AI, Psychology, Anime, Science, Tech, and more).
+Users write and read articles, post in a community feed, follow each other,
+and earn XP, levels, streaks, quests, and badges as they engage with content.
 
-First, run the development server:
+## Tech stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Framework:** Next.js 14 (App Router), TypeScript
+- **Styling:** Tailwind CSS, Framer Motion
+- **Backend:** Supabase (PostgreSQL, Auth, Storage, Row Level Security)
+- **State management:** Zustand
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Local setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone the repo and install dependencies:**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   git clone https://github.com/mehediX129/arthenix.git
+   cd arthenix
+   npm install
 
-## Learn More
+2. **Create your environment file:**
 
-To learn more about Next.js, take a look at the following resources:
+   cp .env.example .env.local
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   Fill in the values from your Supabase project dashboard
+   (Project Settings > API):
+   - NEXT_PUBLIC_SUPABASE_URL
+   - NEXT_PUBLIC_SUPABASE_ANON_KEY
+   - SUPABASE_SERVICE_ROLE_KEY (server-side only, never expose this)
+   - NEXT_PUBLIC_APP_URL (use http://localhost:3000 for local dev)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Set up the database.** In the Supabase SQL Editor, run the migration
+   files below in this exact order:
 
-## Deploy on Vercel
+   supabase/schema.sql
+   supabase/functions_triggers.sql
+   supabase/profile_extensions.sql
+   supabase/migrations/phase16_article_reads.sql
+   supabase/migrations/phase16_streak_fix.sql
+   supabase/migrations/fix_level_column_type.sql
+   supabase/migrations/phase16b_profile_settings.sql
+   supabase/migrations/phase16b_pronouns.sql
+   supabase/migrations/phase16_auto_quest_tracking.sql
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   Do not run supabase/wishlists_table.sql or
+   supabase/price_history_table.sql — these belonged to a marketplace
+   feature that has been permanently removed.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. **Run the dev server:**
+
+   npm run dev
+
+   Open http://localhost:3000
+
+## Project structure
+
+app/                Next.js App Router pages
+components/         Reusable UI components, grouped by feature
+lib/db/             Supabase query functions (one file per table/domain)
+lib/utils/          Gamification helpers (XP, levels, streaks)
+store/              Zustand stores (user, search, notifications, toasts)
+supabase/           SQL schema and migrations
+types/database.ts   TypeScript types mirroring the Supabase schema
+
+## Notes for contributors
+
+- All code, comments, and UI strings are written in English.
+- Every Supabase query function verifies its assumptions against the real
+  database schema — column names and types are a common source of bugs
+  when they drift from what the code expects.
+- Gamification features (XP, quests, streaks) are driven by real user
+  actions tracked server-side, not client-side manual completion.
