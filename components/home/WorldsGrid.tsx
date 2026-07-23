@@ -200,7 +200,7 @@ export default function WorldsGrid() {
             backgroundClip: "text",
           }}
         >
-          12 Universes of Knowledge
+          10 Universes of Knowledge
         </h2>
         <p
           className="font-body mt-3 max-w-xl mx-auto"
@@ -218,7 +218,7 @@ export default function WorldsGrid() {
           gridAutoRows: "160px",
         }}
       >
-        {/* Large cards — index 0 and 3 */}
+        {/* Large cards — index 0 and 5 */}
         {worlds.map((world, index) => (
           <WorldCard
             key={world.id}

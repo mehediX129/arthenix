@@ -1,6 +1,6 @@
 # Arthenix — The Universe of Human Knowledge
 
-Arthenix is a knowledge-sharing and community platform organized around 12
+Arthenix is a knowledge-sharing and community platform organized around 10
 themed "worlds" (Gaming, AI, Psychology, Anime, Science, Tech, and more).
 Users write and read articles, post in a community feed, follow each other,
 and earn XP, levels, streaks, quests, and badges as they engage with content.

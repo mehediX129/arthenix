@@ -48,7 +48,8 @@ export default function HomeCTA() {
           </h2>
 
           <p className="text-text-secondary text-lg max-w-xl mx-auto mb-10">
-            Write articles, sell digital products, join communities, and level up across 12 knowledge worlds.
+            Write articles, join community discussions, and level up across
+            10 knowledge worlds.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

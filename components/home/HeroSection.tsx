@@ -146,7 +146,7 @@ export default function HeroSection() {
           className="font-body text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           style={{ color: "#94A3B8" }}
         >
-          Read and write articles across 12 knowledge worlds, join the
+          Read and write articles across 10 knowledge worlds, join the
           community, and{" "}
           <span style={{ color: "#F8FAFC" }}>
             level up as you learn.

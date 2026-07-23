@@ -30,7 +30,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   return {
     articles: articlesRes.count ?? 0,
     members: membersRes.count ?? 0,
-    worlds: 12,
+    worlds: 10,
     totalXP,
   };
 }
