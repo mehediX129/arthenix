@@ -19,6 +19,7 @@ import {
   Link,
   List,
   ImagePlus,
+  Image as ImageIcon,
   X,
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
@@ -53,9 +54,10 @@ function parseMarkdown(text: string): string {
     .replace(/`(.+?)`/g, "<code>$1</code>")
     .replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>")
     .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/!\[(.*?)\]\((.+?)\)/g, '<img src="$2" alt="$1" loading="lazy" class="prose-img" />')
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/\n\n/g, "</p><p>")
-    .replace(/^(?!<[hlbcap])(.+)$/gm, "<p>$1</p>");
+    .replace(/^(?!<[hlbcapi])(.+)$/gm, "<p>$1</p>");
 }
 
 type SaveStatus = "idle" | "saving" | "saved" | "unsaved";
@@ -167,6 +169,8 @@ export default function WritePage() {
   const [worldDropdown, setWorldDropdown] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [contentImageUploading, setContentImageUploading] = useState(false);
+  const contentImageInputRef = useRef<HTMLInputElement>(null);
 
   // ── Toolbar insertion ──────────────────────────────────────
 
@@ -196,6 +200,24 @@ export default function WritePage() {
     setTimeout(() => el.focus(), 0);
   }
 
+  function insertImageMarkdown(url: string, alt = "image") {
+    const el = textareaRef.current;
+    const markdown = `\n\n![${alt}](${url})\n\n`;
+    if (!el) {
+      setContent((prev) => prev + markdown);
+      return;
+    }
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const newContent = content.slice(0, start) + markdown + content.slice(end);
+    setContent(newContent);
+    setTimeout(() => {
+      el.focus();
+      const cursor = start + markdown.length;
+      el.setSelectionRange(cursor, cursor);
+    }, 0);
+  }
+
   const toolbarActions = [
     { icon: Bold,     label: "Bold",       shortcut: "Ctrl+B", action: () => insertAtCursor("**", "**", "bold text") },
     { icon: Italic,   label: "Italic",     shortcut: "Ctrl+I", action: () => insertAtCursor("*", "*", "italic text") },
@@ -205,6 +227,7 @@ export default function WritePage() {
     { icon: Code,     label: "Inline code",shortcut: "",       action: () => insertAtCursor("`", "`", "code") },
     { icon: List,     label: "List item",  shortcut: "",       action: () => insertLinePrefix("- ") },
     { icon: Link,     label: "Link",       shortcut: "",       action: () => insertAtCursor("[", "](url)", "link text") },
+    { icon: ImageIcon,label: "Insert image", shortcut: "",     action: () => contentImageInputRef.current?.click() },
   ];
 
   // Keyboard shortcuts
@@ -287,6 +310,52 @@ export default function WritePage() {
       setCoverImage(urlData.publicUrl);
     }
     setUploading(false);
+  }
+
+  // ── Inline content image upload ─────────────────────────────
+  // Same bucket as covers, different top-level folder (content/ vs
+  // covers/), so a single storage.foldername(name)[2] = auth.uid()
+  // RLS policy protects both use cases.
+
+  async function handleContentImageUpload(file: File) {
+    if (!user) return;
+    setContentImageUploading(true);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `content/${user.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("article-covers")
+      .upload(path, file, { upsert: true });
+
+    if (!error) {
+      const { data: urlData } = supabase.storage
+        .from("article-covers")
+        .getPublicUrl(path);
+      insertImageMarkdown(urlData.publicUrl);
+    }
+    setContentImageUploading(false);
+  }
+
+  function handleContentImageDrop(e: React.DragEvent<HTMLTextAreaElement>) {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) handleContentImageUpload(file);
+  }
+
+  function handleContentImagePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleContentImageUpload(file);
+        }
+        return;
+      }
+    }
   }
 
   // ── Publish ────────────────────────────────────────────────
@@ -576,13 +645,38 @@ export default function WritePage() {
             <TagInput tags={tags} onChange={setTags} />
 
             {/* Content textarea */}
-            <textarea
-              ref={textareaRef}
-              placeholder={`Write your article here...\n\nTips:\n## Heading 2\n### Heading 3\n**bold**  *italic*  \`code\`\n> blockquote\n- list item`}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={28}
-              className="w-full bg-transparent text-base text-text-primary placeholder:text-text-muted/25 resize-none focus:outline-none leading-relaxed font-body"
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                placeholder={`Write your article here...\n\nTips:\n## Heading 2\n### Heading 3\n**bold**  *italic*  \`code\`\n> blockquote\n- list item\n\nDrag & drop or paste an image anywhere in here to insert it.`}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onPaste={handleContentImagePaste}
+                onDrop={handleContentImageDrop}
+                onDragOver={(e) => e.preventDefault()}
+                rows={28}
+                className="w-full bg-transparent text-base text-text-primary placeholder:text-text-muted/25 resize-none focus:outline-none leading-relaxed font-body"
+              />
+              {contentImageUploading && (
+                <div
+                  className="absolute top-2 right-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs text-violet-300"
+                  style={{ background: "rgba(15,15,25,0.9)", border: "1px solid rgba(124,58,237,0.3)" }}
+                >
+                  <Loader2 size={12} className="animate-spin" />
+                  Uploading image...
+                </div>
+              )}
+            </div>
+            <input
+              ref={contentImageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleContentImageUpload(file);
+                e.target.value = "";
+              }}
             />
           </div>
         ) : (
@@ -653,6 +747,7 @@ export default function WritePage() {
         .prose-arthenix li { margin: 0.25rem 0; padding-left: 1rem; position: relative; color: var(--text-secondary); }
         .prose-arthenix li::before { content: "→"; position: absolute; left: 0; color: #7C3AED; }
         .prose-arthenix a { color: #7C3AED; text-decoration: underline; }
+        .prose-arthenix img { width: 100%; border-radius: 1rem; margin: 1.5rem 0; display: block; }
       `}</style>
     </div>
   );

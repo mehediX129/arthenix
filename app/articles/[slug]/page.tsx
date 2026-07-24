@@ -37,9 +37,10 @@ function parseMarkdown(text: string): string {
     .replace(/`(.+?)`/g, '<code class="article-code">$1</code>')
     .replace(/^> (.+)$/gm, '<blockquote class="article-quote">$1</blockquote>')
     .replace(/^- (.+)$/gm, '<li class="article-li">$1</li>')
+    .replace(/!\[(.*?)\]\((.+?)\)/g, '<img src="$2" alt="$1" loading="lazy" class="article-img" />')
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="article-link">$1</a>')
     .replace(/\n\n/g, '</p><p class="article-p">')
-    .replace(/^(?!<[hlbcap])(.+)$/gm, '<p class="article-p">$1</p>');
+    .replace(/^(?!<[hlbcapi])(.+)$/gm, '<p class="article-p">$1</p>');
 }
 
 // ─── TOC Generator ───────────────────────────────────────────
@@ -640,6 +641,7 @@ export default function ArticleDetailPage() {
         .article-li::before { content: "\\2192"; position: absolute; left: 0; color: #7C3AED; }
         .article-link { color: #7C3AED; text-decoration: underline; text-underline-offset: 3px; }
         .article-link:hover { color: #A78BFA; }
+        .article-img { width: 100%; border-radius: 1rem; margin: 1.75rem 0; display: block; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
       `}</style>
     </div>
   );

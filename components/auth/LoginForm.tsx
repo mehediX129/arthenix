@@ -13,6 +13,7 @@ import AchievementUnlockModal from "@/components/onboarding/AchievementUnlockMod
 import FirstArticlePrompt from "@/components/onboarding/FirstArticlePrompt";
 import { awardOnboardingBadge } from "@/lib/db/onboarding";
 import { signInWithOAuthSafely, type OAuthProvider } from "@/lib/auth/oauth";
+import GoogleOneTap from "@/components/auth/GoogleOneTap";
 
 type Step = "login" | "worlds" | "tour" | "achievement" | "article" | "welcome";
 
@@ -206,6 +207,25 @@ export default function LoginForm() {
     // আনসেট করার দরকার নেই — page navigate করে যাবে।
   }
 
+  // Google One Tap দিয়ে সাইন-ইন সফল হলে কল হয়। এটা fully client-side,
+  // তাই /auth/callback (server redirect) বাইপাস হয়ে যায় — তাই এখানেই
+  // সরাসরি existing onboarding step machinery-তে ঢুকিয়ে দেওয়া হয়, যাতে
+  // button-based Google login-এর মতোই experience হয়।
+  function handleOneTapNewUser(newUserId: string, newUserFirstName: string) {
+    setUserId(newUserId);
+    setFirstName(newUserFirstName);
+    setStep("worlds");
+  }
+
+  function handleOneTapExistingUser() {
+    router.push("/");
+    router.refresh();
+  }
+
+  function handleOneTapError(message: string) {
+    setError(message);
+  }
+
   // OAuth redirect থেকে ফেরার পর user/profile চেক হওয়া পর্যন্ত একটা
   // হালকা loading state দেখানো হয়, যাতে স্ক্রিনে flash না করে।
   if (checkingOAuthSession) {
@@ -247,6 +267,11 @@ export default function LoginForm() {
 
   return (
     <>
+      <GoogleOneTap
+        onNewUser={handleOneTapNewUser}
+        onExistingUser={handleOneTapExistingUser}
+        onError={handleOneTapError}
+      />
       <AchievementUnlockModal
         isOpen={step === "achievement"}
         badgeName={achievementBadgeName}
